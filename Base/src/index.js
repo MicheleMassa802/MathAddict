@@ -6,7 +6,7 @@ async function sayHello() {
         func: () => {
             // inside here we have access to the DOM for the webpage itself,
             // not just for the extension popup!
-            alert('Hello from MathAddict');
+            alert('Hello from MathAddictBase');
         }
     })
 }
