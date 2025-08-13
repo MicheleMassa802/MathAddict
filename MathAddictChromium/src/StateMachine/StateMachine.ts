@@ -6,11 +6,7 @@ leaves and it gets closed off.
 See Graph in MathAddictChromium/Misc/StateTransitions.png for info on state transitions.
  */
 
-import {
-    type MachineState,
-    InactiveState,
-    ActiveState,
-} from "./States.ts";
+import {ActiveState, InactiveState, type MachineState} from "./States.ts";
 
 type TransitionHandler = (source: MachineState) => void;
 type TransitionConfig = {
@@ -37,11 +33,11 @@ export class StateMachine {
     }
 
     // transitions between states if valid and returns if the transition was successful
-    transition(newState: MachineState) : boolean {
+    transition(newState: MachineState, runHandler: boolean = true) : boolean {
 
-        console.log(`Arriving at ${newState} from ${this.currentState}`);
+        console.log(`Trying to move to ${newState} from ${this.currentState}`);
 
-        const conf : TransitionConfig = this.transitions[this.currentState]!;  // all possible keys are in the Map
+        const conf : TransitionConfig = this.transitions[newState]!;  // all possible keys are in the Map
         const validSources : MachineState[] = conf.allowedFrom;
 
         if (!validSources.includes(this.currentState)) {
@@ -53,43 +49,60 @@ export class StateMachine {
         this.prevState = this.currentState;
         this.currentState = newState;
 
-        conf.correspondingHandler(this.prevState);
+        if (runHandler) {
+            conf.correspondingHandler(this.prevState);
+        }
         return true;
+    }
+
+    // reset function for testing purposes
+    resetStateMachineState() : void {
+        this.currentState = InactiveState.PreInit;
+        this.prevState = InactiveState.PreInit;
+    }
+
+    // getters
+    getState() : MachineState {
+        return this.currentState;
+    }
+
+    getPreviousState() : MachineState {
+        return this.prevState;
     }
 
     // function for assigning transitions to the state machine as well as its handler functions
     generateTransitionMap() : TransitionMap {
         return {
             [InactiveState.PreInit]: {
-                allowedFrom: [],
+                allowedFrom: [InactiveState.DashBoard],
                 correspondingHandler: ArriveAtPreInit
             },
             [InactiveState.DashBoard]: {
-                allowedFrom: [],
+                allowedFrom: [InactiveState.PreInit, ActiveState.Question, ActiveState.Answered, ActiveState.SlotRoll, ActiveState.FailAnswer, ActiveState.PayOut],
                 correspondingHandler: ArriveAtDashBoard
             },
             [InactiveState.Exit]: {
-                allowedFrom: [],
+                allowedFrom: [InactiveState.PreInit, InactiveState.DashBoard, ActiveState.Question, ActiveState.Answered, ActiveState.SlotRoll, ActiveState.FailAnswer, ActiveState.PayOut],
                 correspondingHandler: ArriveAtExit
             },
             [ActiveState.Question]: {
-                allowedFrom: [],
+                allowedFrom: [InactiveState.DashBoard, ActiveState.PayOut, ActiveState.FailAnswer],
                 correspondingHandler: ArriveAtQuestion
             },
             [ActiveState.Answered]: {
-                allowedFrom: [],
+                allowedFrom: [ActiveState.Question],
                 correspondingHandler: ArriveAnswered
             },
             [ActiveState.SlotRoll]: {
-                allowedFrom: [],
+                allowedFrom: [ActiveState.Answered],
                 correspondingHandler: ArriveAtSlotRoll
             },
             [ActiveState.FailAnswer]: {
-                allowedFrom: [],
+                allowedFrom: [ActiveState.Answered],
                 correspondingHandler: ArriveAtFailAnswer
             },
             [ActiveState.PayOut]: {
-                allowedFrom: [],
+                allowedFrom: [ActiveState.SlotRoll],
                 correspondingHandler: ArriveAtPayOut
             }
         }
