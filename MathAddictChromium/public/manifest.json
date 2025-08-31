@@ -2,15 +2,25 @@
   "manifest_version": 3,
   "name": "Math Addict",
   "version": "0.0.2",
-  "description": "A basic demo of what MathAddict will be able to do.",
+  "description": "A basic demo of what MathAddict will be able to do through a Unity WebGL Game?",
 
   "icons": {
     "32": "WaveTempIcon.png"
   },
 
-
   "action": {
-    "default_popup": "index.html"
+    "default_popup": "game.html"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["GameBuild/**"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
 
   "permissions": [
