@@ -42,15 +42,17 @@ public static class GameConstants
     public const float jackpotWagerMultLB = 5f;
     public const float jackpotWagerMultUB = 12f;
     public const int jackpotSymbol = 15;  // 'x'
+    public const bool isDebugMode = true;
 }
 
 
 public static class UIConstants
 {
-    #region Result Button Text
+    #region Result Text
     public const string onHoldText = "Spin to win!";
-    public const string successText = "You have WON";
-    public const string lossText = "LOST! \nTry Again!";
+    public const string successText = "You have WON!";
+    public const string jackpotText = "JACKPOT! BIG WIN!";
+    public const string lossText = "LOST ~~ Try Again!";
     #endregion
     
     #region UI Result

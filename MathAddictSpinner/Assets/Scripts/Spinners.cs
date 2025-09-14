@@ -31,8 +31,7 @@ public class Spinners : MonoBehaviour
     {
         new int[] {0, 0, 0, 0 },
         new int[] {0, 0, 0, 0 },
-        new int[] {0, 0, 0, 0 },
-        new int[] {0, 0, 0, 0 },
+        new int[] {0, 0, 0, 0 }
     };
 
     private void Start()
@@ -50,7 +49,12 @@ public class Spinners : MonoBehaviour
         reel4Index = (reel4Index + Random.Range(SpinnerConstants.minIndexDelta, SpinnerConstants.maxIndexDelta)) % SpinnerConstants.reelLength;
         
         SpinResult spinResult = new SpinResult(GetRtp(wager), reel1Index, reel2Index, reel3Index, reel4Index, jackpotTriggered);
-        PrintMatrix(current3By4);
+
+        if (GameConstants.isDebugMode)
+        {
+            PrintMatrix(current3By4);
+        }
+        
         return spinResult;
     }   
     
@@ -94,7 +98,7 @@ public class Spinners : MonoBehaviour
         }
 
         currentReward *= wager / 2;
-        return currentReward;
+        return (float)Math.Round(currentReward, 2);
     }
 
     private Dictionary<int, int> GetCurrent3By4Counts()
@@ -119,14 +123,19 @@ public class Spinners : MonoBehaviour
     private void CountSymbolsInReel(List<int> reel, int reelIndex, Dictionary<int, int> counts, int reelNum)
     {
         int len = SpinnerConstants.reelLength;
-        int key = 0;
+        int key;
         // C# passes the ref to the actual results dictionary, so we can modify it inside w/o need to return
         for (int i = -1; i <= 1; i++)
         {
             key = reel[(reelIndex + i + len) % len];
             counts[key] += 1;
-            current3By4[i+1][reelNum] = key;
+            current3By4[i+1][reelNum-1] = key;
         }
+    }
+
+    public int[][] GetCurrent3By4()
+    {
+        return current3By4;
     }
 
     #region Setup
