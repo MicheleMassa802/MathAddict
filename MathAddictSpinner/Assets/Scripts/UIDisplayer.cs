@@ -9,17 +9,32 @@ using UnityEngine;
  */
 public class UIDisplayer : MonoBehaviour
 {
-    // set on GameObject
-    [SerializeField] private TextMeshProUGUI spinOutcomeText;
+    #region UI Properties set on the GameObject on the scene
+    // Full Screen GameObjects
+    [SerializeField] private GameObject startScreen;
+    [SerializeField] private GameObject slotScreen;
     
+    // Reels
+    [SerializeField] private List<TextMeshProUGUI> orderedReelTextObjects;  // ordered from 11-13...1X-4X (12)
+    
+    // Miscellaneous
+    [SerializeField] private TextMeshProUGUI spinOutcomeText;
+    #endregion
+
     private void Start()
     {
-        if (!spinOutcomeText)
+        if (!startScreen || !slotScreen || !spinOutcomeText || orderedReelTextObjects.Count < 12)
         {
-            Debug.LogError($"{nameof(spinOutcomeText)} is null!");
+            Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
         }
         
         spinOutcomeText?.SetText(UIConstants.onHoldText);
+    }
+
+    public void SwitchScreens(bool toSlots)
+    {
+        startScreen.SetActive(!toSlots);
+        slotScreen.SetActive(toSlots);
     }
 
     public void SetResult(Spinners.SpinResult resultNumbers, int[][] result3By4)

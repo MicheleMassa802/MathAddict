@@ -21,6 +21,18 @@ public class MAUnityManager : MonoBehaviour
         }
     }
 
+    public void OnStartTriggered()
+    {
+        // signal to activate this method comes from JS -- when on a problem page
+        uiManager.SwitchScreens(toSlots: true);
+    }
+    
+    public void OnBackTriggered()
+    {
+        // signal to activate this method comes from JS -- when exiting a problem page
+        uiManager.SwitchScreens(toSlots: false);
+    }
+
     public void OnSpinTriggered()
     {
         // fetch wager from JS
