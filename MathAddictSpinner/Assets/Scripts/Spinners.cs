@@ -8,12 +8,6 @@ using Random = UnityEngine.Random;
  */
 public class Spinners : MonoBehaviour
 {
-    // each reel is made up of a permutation of all symbols that are available (len 8)
-    private List<int> reel1 = new List<int>();
-    private List<int> reel2 = new List<int>();
-    private List<int> reel3 = new List<int>();
-    private List<int> reel4 = new List<int>();
-    
     // indexes indicate where on the reel we are currently on (starts at 1 to have the i-1 for the row above)
     private int reel1Index = 1;
     private int reel2Index = 1;
@@ -33,11 +27,6 @@ public class Spinners : MonoBehaviour
         new int[] {0, 0, 0, 0 },
         new int[] {0, 0, 0, 0 }
     };
-
-    private void Start()
-    {
-        SetupSessionReels();
-    }
     
     // Spin Functions
     public SpinResult TriggerSpin(float wager)
@@ -79,8 +68,10 @@ public class Spinners : MonoBehaviour
         }
         
         // check for 4 in middle row
-        int toMatch = reel1[reel1Index];
-        if (toMatch == reel2[reel2Index] && toMatch == reel3[reel3Index] && toMatch == reel4[reel4Index])
+        int toMatch = MAUnityManager.Instance.reels[0][reel1Index];
+        if (toMatch == MAUnityManager.Instance.reels[1][reel2Index] &&
+            toMatch == MAUnityManager.Instance.reels[2][reel3Index] &&
+            toMatch == MAUnityManager.Instance.reels[3][reel4Index])
         {
             currentReward += (float)Math.Pow(toMatch, 3);
 
@@ -111,10 +102,10 @@ public class Spinners : MonoBehaviour
         }
 
         // get the counts
-        CountSymbolsInReel(reel1, reel1Index, currentSpinCounts, 1);
-        CountSymbolsInReel(reel2, reel2Index, currentSpinCounts, 2);
-        CountSymbolsInReel(reel3, reel3Index, currentSpinCounts, 3);
-        CountSymbolsInReel(reel4, reel4Index, currentSpinCounts, 4);
+        CountSymbolsInReel(MAUnityManager.Instance.reels[0], reel1Index, currentSpinCounts, 1);
+        CountSymbolsInReel(MAUnityManager.Instance.reels[1], reel2Index, currentSpinCounts, 2);
+        CountSymbolsInReel(MAUnityManager.Instance.reels[2], reel3Index, currentSpinCounts, 3);
+        CountSymbolsInReel(MAUnityManager.Instance.reels[3], reel4Index, currentSpinCounts, 4);
         
         return currentSpinCounts;
     }
@@ -137,31 +128,6 @@ public class Spinners : MonoBehaviour
     {
         return current3By4;
     }
-
-    #region Setup
-    private void SetupSessionReels()
-    {
-        List<int> elements = SpinnerConstants.reelSetup;
-        reel1 = ShuffleReel(elements);
-        reel2 = ShuffleReel(reel1);
-        reel3 = ShuffleReel(reel2);
-        reel4 = ShuffleReel(reel3);
-    }
-
-    // fisher-yates shuffle
-    private List<int> ShuffleReel(List<int> elements)
-    {
-        List<int> result = new List<int>(elements);
-        
-        for (int i = result.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            (result[i], result[j]) = (result[j], result[i]);
-        }
-
-        return result;
-    }
-    #endregion
     
     #region SpinResult
     public struct SpinResult

@@ -42,6 +42,10 @@ public class UIDisplayer : MonoBehaviour
         // start spin animation
         
         // settle down on the resulting 3 by 4
+        setReelTriplet(1, resultNumbers.reel1Index);
+        setReelTriplet(2, resultNumbers.reel2Index);
+        setReelTriplet(3, resultNumbers.reel3Index);
+        setReelTriplet(4, resultNumbers.reel4Index);
         
         // display the 3x4 and show the outcome
         string resultString = string.Empty;
@@ -58,5 +62,24 @@ public class UIDisplayer : MonoBehaviour
             resultString += $"{UIConstants.lossText}";
         }
         spinOutcomeText?.SetText(resultString);
+    }
+
+    // sets the items for a reel triplet for a frame of the animation
+    private void setReelTriplet(int reelNumber, int reelIndex)
+    {
+        // reel number is 1 indexed
+        
+        // fetch reel
+        List<int> currReel = MAUnityManager.Instance.reels[reelNumber - 1];
+        int len = SpinnerConstants.reelLength;
+
+        // set the text chars to their corresponding symbols
+        int row = 0;
+        for (int i = -1; i <= 1; i++)
+        {
+            int symbol = currReel[(reelIndex + i + len) % len];
+            orderedReelTextObjects[ (reelNumber - 1) * 3 + row].text = SpinnerConstants.symbolsMap[symbol];
+            row += 1;  // update row # for UI
+        }
     }
 }
