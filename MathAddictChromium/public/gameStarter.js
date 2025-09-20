@@ -2,10 +2,9 @@
 
 document.getElementById("startBtn").addEventListener("click", () => {
     const config = {
-        dataUrl: "GameBuild/Build/TestBuild.data",
-        frameworkUrl: "GameBuild/Build/TestBuild.framework.js",
-        codeUrl: "GameBuild/Build/TestBuild.wasm",
-        streamingAssetsUrl: "GameBuild/StreamingAssets",
+        dataUrl: "GameBuild/Build/MASpinner_v0.0.1.data",
+        frameworkUrl: "GameBuild/Build/MASpinner_v0.0.1.framework.js",
+        codeUrl: "GameBuild/Build/MASpinner_v0.0.1.wasm",
         companyName: "FriesInTheBag",
         productName: "UnityUISample",
         productVersion: "1.0"
