@@ -12,6 +12,7 @@ public static class SpinnerConstants
     public const int numberOfReels = 4;
     public const int numberOfSymbols = 8;
     public const int reelLength = 15;
+    public static readonly List<int> reelSpinsDivisors = new List<int> { 3, 5, 6, 10 };
     
     public static readonly Dictionary<int, string> symbolsMap = new()
     {
@@ -43,6 +44,9 @@ public static class GameConstants
     public const float jackpotWagerMultUB = 12f;
     public const int jackpotSymbol = 15;  // 'x'
     public const bool isDebugMode = true;
+
+    public const int spinFrames = 300;  // 5 seconds
+    public static readonly List<int> reelSpinsLimits = new List<int> { 150, 200, 250, 300 };
 }
 
 

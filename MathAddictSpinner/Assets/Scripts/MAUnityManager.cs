@@ -52,24 +52,24 @@ public class MAUnityManager : MonoBehaviour
     {
         // signal to activate this method comes from JS -- when exiting a problem page
         uiManager.SwitchScreens(toSlots: false);
+        // result the UI to defaults
+        uiManager.ResetToDefaults();
     }
 
     public void OnSpinTriggered()
     {
-        // fetch wager from JS
+        // TODO: Fetch wager to be played from MA JS
         float spinWager = Random.Range(0f, 5f);
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(spinWager);
-        int[][] result3By4 = slotManager.GetCurrent3By4();
+        // int[][] result3By4 = slotManager.GetCurrent3By4();  -- for debugging!
         
         // show results (dramatically if possible)
-        uiManager.SetResult(resultNumbers, result3By4);
-        
-        
+        uiManager.SetResult(resultNumbers);
         
         // add to wallet (dramatically if possible)
-        
+        // TODO: Insert here a command to send reward data to MA JS
     }
 
     private void OnDestroy()

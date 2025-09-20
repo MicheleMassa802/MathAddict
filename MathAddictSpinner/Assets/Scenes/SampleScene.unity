@@ -2262,6 +2262,7 @@ MonoBehaviour:
   - {fileID: 1933338619}
   - {fileID: 1234846694}
   - {fileID: 1245082704}
+  spinButton: {fileID: 1853359071}
   spinOutcomeText: {fileID: 1205361890}
 --- !u!114 &1175678178
 MonoBehaviour:
