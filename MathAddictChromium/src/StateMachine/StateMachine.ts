@@ -110,45 +110,50 @@ export class StateMachine {
 }
 
 
+// NOTE THESE PARAMETERS ARE NOT OPTIONAL SO YOU WILL NEED TO REMOVE THE _ AT THE START TO HAVE THEM GO
+// BACK TO NORMAL, FOR NOW I JUST WANT TO SKIP THE WARNING
+
+
 ///////////////////////
 // Handler functions //   <== may need to be defined on the class that controls the items displayed
 ///////////////////////
 
-function ArriveAtPreInit(source: MachineState): void {
+function ArriveAtPreInit(_source: MachineState): void {
     // show "Start" popup, cleanup any other in-page stuff
+
 }
 
-function ArriveAtDashBoard(source: MachineState): void {
+function ArriveAtDashBoard(_source: MachineState): void {
     // show "Running" popup with extra details on player wallet & progress
 }
 
-function ArriveAtExit(source: MachineState): void {
+function ArriveAtExit(_source: MachineState): void {
     // shutdown everything, clean up objects and stop popup
 }
 
-function ArriveAtQuestion(source: MachineState): void {
+function ArriveAtQuestion(_source: MachineState): void {
     // show slots machine on the side waiting to get activated
     // popup with extra details on player wallet & progress visible
 }
 
-function ArriveAnswered(source: MachineState): void {
+function ArriveAnswered(_source: MachineState): void {
     // show slots machine on the side waiting to get activated
     // popup with extra details on player wallet & progress visible
     // forward result of question captured through crawler onto the UI and trigger a spin
 }
 
-function ArriveAtSlotRoll(source: MachineState): void {
+function ArriveAtSlotRoll(_source: MachineState): void {
     // show slots machine on the side getting activated
     // popup with extra details on player wallet & progress visible (with possible updates)
 }
 
-function ArriveAtFailAnswer(source: MachineState): void {
+function ArriveAtFailAnswer(_source: MachineState): void {
     // show slots machine on the side NOT getting activated
     // popup with extra details on player wallet & progress visible (with possible updates)
     // go back to Question state by default
 }
 
-function ArriveAtPayOut(source: MachineState): void {
+function ArriveAtPayOut(_source: MachineState): void {
     // show slots machine on the side post reward
     // popup with extra details on player wallet & progress visible (with possible updates)
     // go back to Question state by default
