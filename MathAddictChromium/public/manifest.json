@@ -8,10 +8,6 @@
     "32": "WaveTempIcon.png"
   },
 
-  "action": {
-    "default_popup": "game.html"
-  },
-
   "web_accessible_resources": [
     {
       "resources": ["GameBuild/**"],
