@@ -9,8 +9,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: 'popup.html',
-        background: 'src/background.tsx',
         injectUnity: 'src/inject-unity.tsx',
+      },
+      output: {
+        entryFileNames: '[name].js', // ensures input files are output as <name>.js (for loading purposes)
       },
     },
   },

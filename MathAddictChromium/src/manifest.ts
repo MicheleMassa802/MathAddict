@@ -2,14 +2,11 @@ export default {
     manifest_version: 3,
     name: "Math Addict Injector",
     version: "0.0.2",
-    description: "A basic demo of what MathAddict will be able to do through a Unity WebGL Game?",
+    description: "A basic demo of what MathAddict will be able to do through a Unity WebGL Game!",
     permissions: ["tabs", "scripting"],
-    background: {
-        service_worker: "src/background.tsx",
-    },
     web_accessible_resources: [
         {
-            resources: ["GameBuild/**, GameBuild/**/*"],
+            resources: ["GameBuild/**", "GameBuild/**/*"],
             matches: ["<all_urls>"],
         },
     ],
@@ -25,8 +22,5 @@ export default {
     content_security_policy: {
         "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
     },
-    host_permissions: [
-        "http://*/*",
-        "https://*/*"
-    ]
+    host_permissions: ["<all_urls>"]
 };

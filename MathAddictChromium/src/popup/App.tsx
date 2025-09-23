@@ -1,10 +1,14 @@
 export default function App() {
     const launchUnity = () => {
-        chrome.tabs.create({ url: "about:blank" }, (tab) => {
+        // launch a new tab with the target link with the extension ready to load
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const tab = tabs[0];
+            console.log("Creating tab!");
             if (tab.id) {
+                console.log("Calling to inject unity!");
                 chrome.scripting.executeScript({
                     target: { tabId: tab.id },
-                    files: ["src/inject-unity.js"],
+                    files: ["injectUnity.js"],  // this is the built file name chrome expects rather than the actual file at src/
                 });
             }
         });

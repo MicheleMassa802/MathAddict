@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Math Addict",
   "version": "0.0.2",
-  "description": "A basic demo of what MathAddict will be able to do through a Unity WebGL Game?",
+  "description": "A basic demo of what MathAddict will be able to do through a Unity WebGL Game!",
 
   "icons": {
     "32": "WaveTempIcon.png"
