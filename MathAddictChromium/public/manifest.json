@@ -8,10 +8,13 @@
     "32": "WaveTempIcon.png"
   },
 
-  "web_accessible_resources": [
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "content_scripts": [
     {
-      "resources": ["GameBuild/**"],
-      "matches": ["<all_urls>"]
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"]
     }
   ],
 
@@ -20,10 +23,17 @@
   },
 
   "permissions": [
-    "scripting"
+    "scripting", "activeTab"
   ],
   "host_permissions": [
     "http://*/*",
     "https://*/*"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["GameBuild/**"],
+      "matches": ["<all_urls>"]
+    }
   ]
 }
