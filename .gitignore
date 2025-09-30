@@ -2,3 +2,6 @@
 .idea/vcs.xml
 .idea/modules.xml
 .idea/workspace.xml
+
+MathAddictChromium/dist/*
+MathAddictChromium/node_modules/*
