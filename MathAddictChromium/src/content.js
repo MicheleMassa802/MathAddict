@@ -7,14 +7,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "appendDiv" && !divActive) {
         const div = document.createElement("div");
-        div.textContent = request.text;
         div.id = extensionDivId;
         div.style.position = "fixed";
         div.style.width = "400px";
         div.style.height = "711px";
         div.style.bottom = "10px";
         div.style.right = "10px";
-        div.style.backgroundColor = "#556B2F";
+        div.style.backgroundColor = "#A46928";
         div.style.padding = "10px";
         div.style.zIndex = "9999";
 

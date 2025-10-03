@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -13,6 +14,8 @@ public class MAUnityManager : MonoBehaviour
 {
     // This manager is a singleton
     public static MAUnityManager Instance;
+    
+    private float currentWager = -1f;
     
     // set on GameObject
     [SerializeField] private Spinners slotManager;
@@ -58,11 +61,8 @@ public class MAUnityManager : MonoBehaviour
 
     public void OnSpinTriggered()
     {
-        // TODO: Fetch wager to be played from MA JS
-        float spinWager = Random.Range(0f, 5f);
-        
         // trigger math
-        Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(spinWager);
+        Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currentWager);
         // int[][] result3By4 = slotManager.GetCurrent3By4();  -- for debugging!
         
         // show results (dramatically if possible)
@@ -70,6 +70,9 @@ public class MAUnityManager : MonoBehaviour
         
         // add to wallet (dramatically if possible)
         // TODO: Insert here a command to send reward data to MA JS
+        
+        // teardown
+        currentWager = SpinnerConstants.invalidWager;
     }
 
     private void OnDestroy()
@@ -77,6 +80,30 @@ public class MAUnityManager : MonoBehaviour
         Instance = null;
     }
 
+    #region JS Interaction
+
+    // Outgoing Methods
+    [DllImport("__Internal")]
+    private static extern void SendResults(string resultString);  
+    // TODO: takes in a string that encodes a result object into json for the extension to handle
+
+    // Incoming Methods -- Receive params as strings
+    public void SetWager(string jsWager)
+    {
+        // this method is called by JS when a question is completed, which then allows the player to spin
+        // currentWager > 0 allows for the activation of the spin button
+        float realWager = float.Parse(jsWager);
+        if (currentWager > 0)
+        {
+            // previous spin was not triggered, do so and come back!
+            OnSpinTriggered();
+        }
+        
+        // by default we set the wager that then gets triggered by our spin!
+        currentWager = realWager;
+    } 
+    #endregion
+    
     #region Setup
     
     // called by MAUnityManager

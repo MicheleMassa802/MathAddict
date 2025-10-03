@@ -33,6 +33,7 @@ public static class SpinnerConstants
     #region Spin
     public const int minIndexDelta = 80;
     public const int maxIndexDelta = 200;
+    public const float invalidWager = -1f;
     #endregion
 }
 

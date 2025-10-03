@@ -69,8 +69,8 @@ if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
 } else {
     // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
 
-    canvas.style.width = "960px";
-    canvas.style.height = "600px";
+    canvas.style.width = "395px";
+    canvas.style.height = "706px";
 }
 
 loadingBar.style.display = "block";
@@ -82,9 +82,12 @@ script.onload = () => {
         progressBarFull.style.width = 100 * progress + "%";
     }).then((unityInstance) => {
         loadingBar.style.display = "none";
-        fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-        };
+
+        // use the UnityInstance to send events over to the game like a spin
+        setTimeout(() => {
+            unityInstance.SendMessage("MAUnityManager", "SetWager", 6.7);
+            console.log("Sent float 6.7 to Unity!");
+        }, 5000);
     }).catch((message) => {
         alert(message);
     });
