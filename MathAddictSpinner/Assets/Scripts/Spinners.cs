@@ -130,6 +130,7 @@ public class Spinners : MonoBehaviour
     }
     
     #region SpinResult
+    [System.Serializable]
     public struct SpinResult
     {
         public float rtp;

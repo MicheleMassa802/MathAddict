@@ -61,6 +61,10 @@ public class MAUnityManager : MonoBehaviour
 
     public void OnSpinTriggered()
     {
+        #if UNITY_EDITOR
+        currentWager = Random.Range(1f, 5f);
+        #endif
+        
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currentWager);
         // int[][] result3By4 = slotManager.GetCurrent3By4();  -- for debugging!
@@ -69,7 +73,7 @@ public class MAUnityManager : MonoBehaviour
         uiManager.SetResult(resultNumbers);
         
         // add to wallet (dramatically if possible)
-        // TODO: Insert here a command to send reward data to MA JS
+        ParseAndSendResult(resultNumbers);
         
         // teardown
         currentWager = SpinnerConstants.invalidWager;
@@ -83,10 +87,22 @@ public class MAUnityManager : MonoBehaviour
     #region JS Interaction
 
     // Outgoing Methods
+    #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
     private static extern void SendResults(string resultString);  
-    // TODO: takes in a string that encodes a result object into json for the extension to handle
-
+    // Takes in a string that encodes a result object into json for the extension to handle
+    #endif
+    
+    private void ParseAndSendResult(Spinners.SpinResult resultNumbers)
+    {
+        string resultJson = JsonUtility.ToJson(resultNumbers);
+        Debug.Log($"Simulating send to JS: {resultJson}");
+        
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        SendResults(resultJson);
+        #endif
+    }
+    
     // Incoming Methods -- Receive params as strings
     public void SetWager(string jsWager)
     {
@@ -102,6 +118,7 @@ public class MAUnityManager : MonoBehaviour
         // by default we set the wager that then gets triggered by our spin!
         currentWager = realWager;
     } 
+    
     #endregion
     
     #region Setup
