@@ -47,3 +47,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ status: "invalid/unknown action" });
     }
 });
+
+window.addEventListener("message", (event) => {
+    if (event.data?.type === "unityResult") {
+        console.log("Received from Unity:", event.data.payload);
+    }
+});

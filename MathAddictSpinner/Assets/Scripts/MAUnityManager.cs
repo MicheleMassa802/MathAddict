@@ -108,6 +108,7 @@ public class MAUnityManager : MonoBehaviour
     {
         // this method is called by JS when a question is completed, which then allows the player to spin
         // currentWager > 0 allows for the activation of the spin button
+        Debug.Log($"Received Wager: {jsWager}");
         float realWager = float.Parse(jsWager);
         if (currentWager > 0)
         {

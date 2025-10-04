@@ -32,11 +32,11 @@ function unityShowBanner(msg, type) {
 }
 
 var buildUrl = "Build";
-var loaderUrl = buildUrl + "/MASpinner_v0.0.1.loader.js";
+var loaderUrl = buildUrl + "/MASpinner_v0.0.2.loader.js";
 var config = {
-    dataUrl: buildUrl + "/MASpinner_v0.0.1.data",
-    frameworkUrl: buildUrl + "/MASpinner_v0.0.1.framework.js",
-    codeUrl: buildUrl + "/MASpinner_v0.0.1.wasm",
+    dataUrl: buildUrl + "/MASpinner_v0.0.2.data",
+    frameworkUrl: buildUrl + "/MASpinner_v0.0.2.framework.js",
+    codeUrl: buildUrl + "/MASpinner_v0.0.2.wasm",
     streamingAssetsUrl: "StreamingAssets",
     companyName: "DefaultCompany",
     productName: "MathAddictSpinner",
@@ -84,13 +84,18 @@ script.onload = () => {
         loadingBar.style.display = "none";
 
         // use the UnityInstance to send events over to the game like a spin
-        setTimeout(() => {
-            unityInstance.SendMessage("MAUnityManager", "SetWager", 6.7);
-            console.log("Sent float 6.7 to Unity!");
-        }, 5000);
+        console.log("Setting wager to 100.5");
+        unityInstance.SendMessage("MAUnityManager", "SetWager", "100.5");
     }).catch((message) => {
         alert(message);
     });
 };
+
+// patch for audio errors (bad logs still spit out until first gesture)
+document.addEventListener("click", () => {
+    if (typeof UnityAudioContext !== "undefined" && UnityAudioContext.state === "suspended") {
+        UnityAudioContext.resume();
+    }
+});
 
 document.body.appendChild(script);
