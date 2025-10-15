@@ -9,7 +9,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 popup: 'src/popup.html',
-                content: 'src/content.js'
+                content: 'src/content.js',
+                unityRelay: 'src/unityRelay.js',
             },
             output: {
                 entryFileNames: 'src/[name].js'

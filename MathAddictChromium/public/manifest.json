@@ -33,7 +33,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["GameBuild/**"],
+      "resources": ["GameBuild/**", "src/unityRelay.js"],
       "matches": ["<all_urls>"]
     }
   ]

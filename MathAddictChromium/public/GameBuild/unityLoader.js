@@ -81,6 +81,7 @@ script.onload = () => {
     createUnityInstance(canvas, config, (progress) => {
         progressBarFull.style.width = 100 * progress + "%";
     }).then((unityInstance) => {
+        window.unityInstance = unityInstance;
         loadingBar.style.display = "none";
 
         // use the UnityInstance to send events over to the game like a spin

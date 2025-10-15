@@ -68,16 +68,6 @@ window.addEventListener("message", (event) => {
     }
 });
 
-// watch out for completed questions
-// document.addEventListener('click', (e) => {
-//     console.log("[MathAddict] Click");
-//     const target = e.target;
-//     const button = target.closest('.continueButton');
-//     if (button) {
-//         console.log('[MathAddict] 👉 Continue button clicked');
-//     }
-// });
-
 const observer = new MutationObserver((mutations) => {
     console.log('[Observer] Mutation batch received:', mutations.length);
 
@@ -118,6 +108,12 @@ function handleResultBox(resultBox) {
     if (isCorrect) {
         console.log('[Extension] ✅ Correct answer detected');
         // call Unity to set the wager
+        const iframe = document.querySelector('iframe[src*="GameBuild/index.html"]');
+        iframe.contentWindow.postMessage({
+            type: 'UNITY_COMMAND',
+            method: 'SetWager',
+            value: '100.5'
+        }, '*');
 
     } else if (isIncorrect) {
         console.log('[Extension] ❌ Incorrect answer detected');
@@ -130,3 +126,9 @@ observer.observe(document.body, {
     childList: true,
     subtree: true,
 });
+
+// inject unity loader instance result into page context
+const script = document.createElement('script');
+script.src = chrome.runtime.getURL('src/unityRelay.js');
+script.onload = () => script.remove();
+(document.head || document.documentElement).appendChild(script);
