@@ -30,6 +30,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log("Div appended to page");
         sendResponse({ status: "success" });
 
+    } else if (request.action === "debugDiv") {
+        // add extra:
+        const div2 = document.createElement("div");
+        div2.innerHTML = `
+          <div class="questionWidget-result">
+            <div class="questionWidget-correctIncorrectIcon">
+              <p>Correct!</p>
+            </div>
+            <div class="questionWidget-correctText">Correct</div>
+          </div>
+        `;
+        document.body.appendChild(div2);
+        sendResponse({ status: "successful debug" });
+
     } else if (request.action === "removeDiv") {
         const div = document.getElementById(extensionDivId);
         if (div) {
@@ -52,4 +66,67 @@ window.addEventListener("message", (event) => {
     if (event.data?.type === "unityResult") {
         console.log("Received from Unity:", event.data.payload);
     }
+});
+
+// watch out for completed questions
+// document.addEventListener('click', (e) => {
+//     console.log("[MathAddict] Click");
+//     const target = e.target;
+//     const button = target.closest('.continueButton');
+//     if (button) {
+//         console.log('[MathAddict] 👉 Continue button clicked');
+//     }
+// });
+
+const observer = new MutationObserver((mutations) => {
+    console.log('[Observer] Mutation batch received:', mutations.length);
+
+    for (const mutation of mutations) {
+        console.log('[Observer] Mutation type:', mutation.type);
+
+        for (const node of mutation.addedNodes) {
+            console.log('[Observer] Node added:', node);
+
+            if (!(node instanceof HTMLElement)) {
+                console.log('[Observer] Skipped non-HTMLElement node');
+                continue;
+            }
+
+            // Check if the added node itself is the result box
+            if (node.classList.contains('questionWidget-result')) {
+                console.log('[Observer] Found result box directly:', node);
+                handleResultBox(node);
+                continue;
+            }
+
+            // Or if it contains the result box somewhere inside
+            const resultBox = node.querySelector('.questionWidget-result');
+            if (resultBox) {
+                console.log('[Observer] Found result box inside added node:', resultBox);
+                handleResultBox(resultBox);
+            } else {
+                console.log('[Observer] No result box found in this node');
+            }
+        }
+    }
+});
+
+function handleResultBox(resultBox) {
+    const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
+    const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
+
+    if (isCorrect) {
+        console.log('[Extension] ✅ Correct answer detected');
+        // call Unity to set the wager
+
+    } else if (isIncorrect) {
+        console.log('[Extension] ❌ Incorrect answer detected');
+    } else {
+        console.log('[Extension] 🤔 Answer result detected, but unclear');
+    }
+}
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true,
 });
