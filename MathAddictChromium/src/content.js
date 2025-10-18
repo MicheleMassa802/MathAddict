@@ -30,20 +30,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log("Div appended to page");
         sendResponse({ status: "success" });
 
-    } else if (request.action === "debugDiv") {
-        // add extra:
-        const div2 = document.createElement("div");
-        div2.innerHTML = `
-          <div class="questionWidget-result">
-            <div class="questionWidget-correctIncorrectIcon">
-              <p>Correct!</p>
-            </div>
-            <div class="questionWidget-correctText">Correct</div>
-          </div>
-        `;
-        document.body.appendChild(div2);
-        sendResponse({ status: "successful debug" });
-
     } else if (request.action === "removeDiv") {
         const div = document.getElementById(extensionDivId);
         if (div) {

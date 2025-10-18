@@ -29,20 +29,6 @@ function handleRemoveDivClick() {
     });
 }
 
-function handleDebugDivClick() {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const tabId = tabs[0]?.id;
-        if (tabId) {
-            chrome.tabs.sendMessage(tabId, { action: "debugDiv" }, (response) => {
-                console.log("Debug message sent. Response:", response);
-            });
-        } else {
-            console.error("No active tab found");
-        }
-    });
-}
-
 document.getElementById("appendDiv").addEventListener("click", handleAppendDivClick);
-document.getElementById("debugDiv").addEventListener("click", handleDebugDivClick);
 document.getElementById("removeDiv").addEventListener("click", handleRemoveDivClick);
 // appendDiv & removeDiv are the button element id

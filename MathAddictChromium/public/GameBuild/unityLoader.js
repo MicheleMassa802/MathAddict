@@ -83,10 +83,6 @@ script.onload = () => {
     }).then((unityInstance) => {
         window.unityInstance = unityInstance;
         loadingBar.style.display = "none";
-
-        // use the UnityInstance to send events over to the game like a spin
-        console.log("Setting wager to 100.5");
-        unityInstance.SendMessage("MAUnityManager", "SetWager", "100.5");
     }).catch((message) => {
         alert(message);
     });
