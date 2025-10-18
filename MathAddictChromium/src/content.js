@@ -1,11 +1,13 @@
 let divActive = false;
 const extensionDivId = "MADiv";
+const debugPrefix = "[MathAddict][Content]";
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // create div when receiving the signal from popup.js
-    console.log("Content script received message:", request);
+    // handle receiving the signals from popup.js
 
     if (request.action === "appendDiv" && !divActive) {
+        console.log(debugPrefix, "[HandlePopupResponse] Starting Unity Slots Div");
+
         const div = document.createElement("div");
         div.id = extensionDivId;
         div.style.position = "fixed";
@@ -27,18 +29,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         document.body.appendChild(div);
 
         divActive = true;
-        console.log("Div appended to page");
         sendResponse({ status: "success" });
 
     } else if (request.action === "removeDiv") {
+        console.log(debugPrefix, "[HandlePopupResponse] Exiting Unity Slots Div");
         const div = document.getElementById(extensionDivId);
         if (div) {
             div.remove();
             divActive = false;
-            console.log("Div removed from page");
             sendResponse({ status: "removed" });
         } else {
-            console.log("No div found to remove");
             sendResponse({ status: "Div to remove not found" });
         }
 
@@ -50,27 +50,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 window.addEventListener("message", (event) => {
     if (event.data?.type === "unityResult") {
-        console.log("Received from Unity:", event.data.payload);
+        console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
     }
 });
 
 const observer = new MutationObserver((mutations) => {
-    console.log('[Observer] Mutation batch received:', mutations.length);
 
     for (const mutation of mutations) {
-        console.log('[Observer] Mutation type:', mutation.type);
-
         for (const node of mutation.addedNodes) {
-            console.log('[Observer] Node added:', node);
 
             if (!(node instanceof HTMLElement)) {
-                console.log('[Observer] Skipped non-HTMLElement node');
                 continue;
             }
 
             // Check if the added node itself is the result box
             if (node.classList.contains('questionWidget-result')) {
-                console.log('[Observer] Found result box directly:', node);
                 handleResultBox(node);
                 continue;
             }
@@ -78,13 +72,13 @@ const observer = new MutationObserver((mutations) => {
             // Or if it contains the result box somewhere inside
             const resultBox = node.querySelector('.questionWidget-result');
             if (resultBox) {
-                console.log('[Observer] Found result box inside added node:', resultBox);
                 handleResultBox(resultBox);
-            } else {
-                console.log('[Observer] No result box found in this node');
+                return;  // early return
             }
         }
     }
+
+    console.log(debugPrefix, "[AnalyzeMutations] No question result box found in Mutated Nodes");
 });
 
 function handleResultBox(resultBox) {
@@ -92,7 +86,7 @@ function handleResultBox(resultBox) {
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
     if (isCorrect) {
-        console.log('[Extension] ✅ Correct answer detected');
+        console.log(debugPrefix, '[HandleResultBox] CORRECT answer detected');
         // call Unity to set the wager
         const iframe = document.querySelector('iframe[src*="GameBuild/index.html"]');
         iframe.contentWindow.postMessage({
@@ -102,9 +96,9 @@ function handleResultBox(resultBox) {
         }, '*');
 
     } else if (isIncorrect) {
-        console.log('[Extension] ❌ Incorrect answer detected');
+        console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
     } else {
-        console.log('[Extension] 🤔 Answer result detected, but unclear');
+        console.log(debugPrefix, '[HandleResultBox] WTF is that answer being detected bro, be fr...');
     }
 }
 

@@ -4,7 +4,6 @@ var container = document.querySelector("#unity-container");
 var canvas = document.querySelector("#unity-canvas");
 var loadingBar = document.querySelector("#unity-loading-bar");
 var progressBarFull = document.querySelector("#unity-progress-bar-full");
-var fullscreenButton = document.querySelector("#unity-fullscreen-button");
 var warningBanner = document.querySelector("#unity-warning");
 
 // Shows a temporary message banner/ribbon for a few seconds, or
@@ -91,6 +90,7 @@ script.onload = () => {
 // patch for audio errors (bad logs still spit out until first gesture)
 document.addEventListener("click", () => {
     if (typeof UnityAudioContext !== "undefined" && UnityAudioContext.state === "suspended") {
+        console.log("[MathAddict][UnityLoader][AudioClick] #\n#\n#\n#\nUHHHH whats going on here?")
         UnityAudioContext.resume();
     }
 });

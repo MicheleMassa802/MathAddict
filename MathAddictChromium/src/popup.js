@@ -1,5 +1,7 @@
+const debugPrefix = "[MathAddict][Popup]";
+
 function handleAppendDivClick() {
-    console.log("Clicked button to append new div!");
+    console.log(debugPrefix, "[HandleAppendDivClick] Clicked button to append new div!");
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id;
@@ -8,10 +10,10 @@ function handleAppendDivClick() {
                 action: "appendDiv",
                 text: "Hello from the extension!",
             }, (response) => {
-                console.log("Message sent to content script. Response:", response);
+                console.log(debugPrefix, "[HandleAppendDivClick] Append message sent to content script. Response:", response);
             });
         } else {
-            console.error("No active tab found");
+            console.error(debugPrefix, "[HandleAppendDivClick] Can't send 'APPEND' message. No tab found for Content.js");
         }
     });
 }
@@ -21,10 +23,10 @@ function handleRemoveDivClick() {
         const tabId = tabs[0]?.id;
         if (tabId) {
             chrome.tabs.sendMessage(tabId, { action: "removeDiv" }, (response) => {
-                console.log("Remove message sent. Response:", response);
+                console.log(debugPrefix, "[HandleRemoveDivClick] Remove message sent to content script. Response:", response);
             });
         } else {
-            console.error("No active tab found");
+            console.error(debugPrefix, "[HandleRemoveDivClick] Can't send 'REMOVE' message. No tab found for Content.js");
         }
     });
 }
