@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -20,7 +21,10 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private Button spinButton; 
     
     // Miscellaneous
+    [SerializeField] private TextMeshProUGUI spinButtonText; 
+    [SerializeField] private TextMeshProUGUI wagerText;
     [SerializeField] private TextMeshProUGUI spinOutcomeText;
+    [SerializeField] private TextMeshProUGUI lastWinText;
     #endregion
 
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
@@ -28,12 +32,15 @@ public class UIDisplayer : MonoBehaviour
     
     private void Start()
     {
-        if (!startScreen || !slotScreen || !spinOutcomeText || orderedReelTextObjects.Count < 12)
+        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText || orderedReelTextObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
         }
         
         spinOutcomeText?.SetText(UIConstants.onHoldText);
+        wagerText?.SetText($"{UIConstants.wagerText}00.00");
+        lastWinText?.SetText($"{UIConstants.lastWinText}00.00");
+        SetSpinButtonInteractable(false);
     }
 
     public void SwitchScreens(bool toSlots)
@@ -47,11 +54,21 @@ public class UIDisplayer : MonoBehaviour
         // start spin animation from current indexes up to result indexes
         StartCoroutine(AnimateSlotSpin(resultNumbers));
     }
+
+    public void SetWager(float wager)
+    {
+        wagerText?.SetText($"{UIConstants.wagerText}{Math.Truncate(100 * wager) / 100}");
+    }
+    
+    public void SetLastWin(float lastWin)
+    {
+        lastWinText?.SetText($"{UIConstants.lastWinText}{Math.Truncate(100 * lastWin) / 100}");
+    }
     
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers)
     {
         // prep to start animations
-        spinButton.interactable = false;
+        SetSpinButtonInteractable(false);
         spinCoroutineCounter = 0;
         
         List<int> counterDivisors = SpinnerConstants.reelSpinsDivisors;
@@ -84,12 +101,13 @@ public class UIDisplayer : MonoBehaviour
         
         // clean up
         DisplayResultText(resultNumbers);
-        spinButton.interactable = true;
-        
         reelIndexes[0] = resultNumbers.reel1Index;
         reelIndexes[1] = resultNumbers.reel2Index;
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
+        // its important we don't set the spin button as interactable here again
+        // as its interact-ability is controlled by the wagers computed and sent
+        // to Unity by JS
     }
     
     // sets the items for a reel triplet for a frame of the animation
@@ -115,25 +133,44 @@ public class UIDisplayer : MonoBehaviour
     {
         // show the text outcome
         string resultString = string.Empty;
+        double roundedRtp = Math.Truncate(100 * resultNumbers.rtp) / 100;
         if (resultNumbers.jackpotTriggered)
         {
-            resultString += $"{UIConstants.jackpotText}\n {resultNumbers.rtp}";
+            resultString += $"{UIConstants.jackpotText}\n {roundedRtp}";
         } 
         else if (resultNumbers.rtp > 0)
         {
-            resultString += $"{UIConstants.successText}\n {resultNumbers.rtp}";
+            resultString += $"{UIConstants.successText}\n {roundedRtp}";
         }
         else
         {
             resultString += $"{UIConstants.lossText}";
         }
-        spinOutcomeText?.SetText(resultString);
+        spinOutcomeText?.SetText(resultString); 
+        SetLastWin(resultNumbers.rtp);
     }
 
     public void ResetToDefaults()
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
-        spinCoroutineCounter = 0;
+        spinCoroutineCounter = 0; 
+        SetSpinToWinText();
+    }
+
+    public void SetSpinToWinText()
+    {
         spinOutcomeText?.SetText(UIConstants.onHoldText);
+    }
+
+    public void SetSpinButtonInteractable(bool interactable)
+    {
+        if (spinButton != null)
+        {
+            spinButton.interactable = interactable;
+            // set transparency of text based on interact-ability
+            Color spinButtonTextColor = spinButtonText.color;
+            spinButtonTextColor.a = interactable ? 1.0f : 0.0f;
+            spinButtonText.color = spinButtonTextColor;
+        }
     }
 }

@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -45,25 +41,14 @@ public class MAUnityManager : MonoBehaviour
         }
     }
 
-    public void OnStartTriggered()
-    {
-        // signal to activate this method comes from JS -- when on a problem page
-        uiManager.SwitchScreens(toSlots: true);
-    }
-    
-    public void OnBackTriggered()
-    {
-        // signal to activate this method comes from JS -- when exiting a problem page
-        uiManager.SwitchScreens(toSlots: false);
-        // result the UI to defaults
-        uiManager.ResetToDefaults();
-    }
-
     public void OnSpinTriggered()
     {
         #if UNITY_EDITOR
         currentWager = Random.Range(1f, 5f);
+        uiManager.SetWager(currentWager);
         #endif
+        
+        uiManager.SetSpinToWinText();
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currentWager);
@@ -104,6 +89,20 @@ public class MAUnityManager : MonoBehaviour
     }
     
     // Incoming Methods -- Receive params as strings
+    public void OnStartTriggered()  // also called by debug button
+    {
+        // signal to activate this method comes from JS -- when on a problem page
+        uiManager.SwitchScreens(toSlots: true);
+    }
+    
+    public void OnBackTriggered()  // also called by debug button
+    {
+        // signal to activate this method comes from JS -- when exiting a problem page
+        uiManager.SwitchScreens(toSlots: false);
+        // result the UI to defaults
+        uiManager.ResetToDefaults();
+    }
+    
     public void SetWager(string jsWager)
     {
         // this method is called by JS when a question is completed, which then allows the player to spin
@@ -118,6 +117,7 @@ public class MAUnityManager : MonoBehaviour
         
         // by default we set the wager that then gets triggered by our spin!
         currentWager = realWager;
+        uiManager.SetSpinButtonInteractable(currentWager > 0);
     } 
     
     #endregion

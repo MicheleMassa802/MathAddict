@@ -1,8 +1,77 @@
 <!DOCTYPE html>
 <html lang="en-us">
-    <body>
-        <button id="appendDiv">Start</button>
-        <button id="removeDiv">Quit</button>
-        <script type="module" src="./popup.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8" />
+    <title>MathAddict Popup</title>
+    <style>
+        h1 {
+            text-align: center;
+        }
+
+        body {
+            margin: 0;
+            padding: 1.5rem;
+            background-color: #481717;
+            font-family: 'Segoe UI', sans-serif;
+            color: #A46928;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 225px;
+        }
+
+        button {
+            background-color: #481717;
+            color: white;
+            border: 2px solid #A46928;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(228, 167, 0, 0.3);
+        }
+
+        #status {
+            color: #E4A700;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.90rem;
+            font-weight: bold;
+        }
+
+        #content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1> Welcome to Math Addict! </h1>
+        <div id="buttons">
+            <button id="appendDiv">Start</button>
+            <button id="removeDiv">Quit</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <script type="module">
+        const status = document.getElementById('status');
+        document.getElementById('appendDiv').addEventListener('click', () => {
+            status.textContent = 'MA Running!';
+        });
+        document.getElementById('removeDiv').addEventListener('click', () => {
+            status.textContent = 'MA Shut Down!';
+        });
+    </script>
+    <script type="module" src="./popup.js"></script>
+</body>
 </html>

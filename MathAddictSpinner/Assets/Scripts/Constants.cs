@@ -53,15 +53,16 @@ public static class GameConstants
 
 public static class UIConstants
 {
-    #region Result Text
-    public const string onHoldText = "Spin to win!";
-    public const string successText = "You have WON!";
-    public const string jackpotText = "JACKPOT! BIG WIN!";
-    public const string lossText = "LOST ~~ Try Again!";
+    #region Misc Text
+    public const string onHoldText = "Spin\n2\nwin!";
+    public const string successText = "You've\nWON!";
+    public const string jackpotText = "JACKPOT!";
+    public const string lossText = "Try\nAgain!";
+
+    public const string wagerText = "Wager:\n $";
+    public const string lastWinText = "Last Win:\n $";
     #endregion
-    
-    #region UI Result
-    #endregion
+
 }
 
 
