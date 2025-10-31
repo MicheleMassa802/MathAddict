@@ -11,7 +11,8 @@ public class MAUnityManager : MonoBehaviour
     // This manager is a singleton
     public static MAUnityManager Instance;
     
-    private float currentWager = -1f;
+    private Queue<float> wagers = new();
+    private float balance = 0f;
     
     // set on GameObject
     [SerializeField] private Spinners slotManager;
@@ -39,19 +40,33 @@ public class MAUnityManager : MonoBehaviour
         {
             Debug.LogError($"One of {nameof(slotManager)} or {nameof(uiManager)} is null!");
         }
+        
+        // TODO: request balance from JS
     }
 
     public void OnSpinTriggered()
     {
+        float currWager;
+        
         #if UNITY_EDITOR
-        currentWager = Random.Range(1f, 5f);
-        uiManager.SetWager(currentWager);
+        wagers.Enqueue(Random.Range(1f, 5f));
         #endif
         
+        if (wagers.Count > 0) {
+            currWager = wagers.Dequeue();
+        }
+        else {
+            // this shouldn't happen, but handle it by setting the text as if a wager isn't present
+            Debug.LogError("Attempted to trigger spin without a wager available!");
+            uiManager.SetSpinButtonInteractable(false);
+            return;
+        }
+        
+        uiManager.SetWager(currWager);
         uiManager.SetSpinToWinText();
         
         // trigger math
-        Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currentWager);
+        Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currWager);
         // int[][] result3By4 = slotManager.GetCurrent3By4();  -- for debugging!
         
         // show results (dramatically if possible)
@@ -59,9 +74,6 @@ public class MAUnityManager : MonoBehaviour
         
         // add to wallet (dramatically if possible)
         ParseAndSendResult(resultNumbers);
-        
-        // teardown
-        currentWager = SpinnerConstants.invalidWager;
     }
 
     private void OnDestroy()
@@ -76,6 +88,8 @@ public class MAUnityManager : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void SendResults(string resultString);  
     // Takes in a string that encodes a result object into json for the extension to handle
+    private static extern void SendBalanceUpdate(string balanceString);  
+    // Takes in a string that encodes a float for the extension to handle
     #endif
     
     private void ParseAndSendResult(Spinners.SpinResult resultNumbers)
@@ -106,18 +120,23 @@ public class MAUnityManager : MonoBehaviour
     public void SetWager(string jsWager)
     {
         // this method is called by JS when a question is completed, which then allows the player to spin
-        // currentWager > 0 allows for the activation of the spin button
+        // using the wagers they've accumulated in the wager queue
         Debug.Log($"Received Wager: {jsWager}");
         float realWager = float.Parse(jsWager);
-        if (currentWager > 0)
-        {
-            // previous spin was not triggered, do so and come back!
-            OnSpinTriggered();
-        }
         
         // by default we set the wager that then gets triggered by our spin!
-        currentWager = realWager;
-        uiManager.SetSpinButtonInteractable(currentWager > 0);
+        wagers.Enqueue(realWager);
+        uiManager.SetSpinButtonInteractable(wagers.Count > 0);
+    }
+    
+    public void SetBalance(string jsBalance)
+    {
+        // this method is called by JS when starting a session to setup the balance in game.
+        Debug.Log($"Received Balance: {jsBalance}");
+        float realBalance = float.Parse(jsBalance);
+        
+        balance = realBalance;
+        uiManager.SetBalance(balance);
     } 
     
     #endregion

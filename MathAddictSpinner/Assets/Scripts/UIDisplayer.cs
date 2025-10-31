@@ -25,6 +25,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI wagerText;
     [SerializeField] private TextMeshProUGUI spinOutcomeText;
     [SerializeField] private TextMeshProUGUI lastWinText;
+    [SerializeField] private TextMeshProUGUI balanceText;
     #endregion
 
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
@@ -32,7 +33,7 @@ public class UIDisplayer : MonoBehaviour
     
     private void Start()
     {
-        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText || orderedReelTextObjects.Count < 12)
+        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText || !balanceText || orderedReelTextObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
         }
@@ -63,6 +64,11 @@ public class UIDisplayer : MonoBehaviour
     public void SetLastWin(float lastWin)
     {
         lastWinText?.SetText($"{UIConstants.lastWinText}{Math.Truncate(100 * lastWin) / 100}");
+    }
+
+    public void SetBalance(float balance)
+    {
+        balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
     
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers)
@@ -171,6 +177,9 @@ public class UIDisplayer : MonoBehaviour
             Color spinButtonTextColor = spinButtonText.color;
             spinButtonTextColor.a = interactable ? 1.0f : 0.0f;
             spinButtonText.color = spinButtonTextColor;
+            
+            // show the user they can spin through an animation
+            // TODO!
         }
     }
 }
