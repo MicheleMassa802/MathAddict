@@ -139,6 +139,7 @@ public class Spinners : MonoBehaviour
         public int reel3Index;
         public int reel4Index;
         public bool jackpotTriggered;
+        public float newBalance;
 
         public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot)
         {
@@ -148,6 +149,7 @@ public class Spinners : MonoBehaviour
             reel3Index = index3;
             reel4Index = index4;
             jackpotTriggered = jackpot;
+            newBalance = -1f;
         }
     }
     #endregion

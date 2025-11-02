@@ -55,7 +55,8 @@ public class MAUnityManager : MonoBehaviour
         if (wagers.Count > 0) {
             currWager = wagers.Dequeue();
         }
-        else {
+        else 
+        {
             // this shouldn't happen, but handle it by setting the text as if a wager isn't present
             Debug.LogError("Attempted to trigger spin without a wager available!");
             uiManager.SetSpinButtonInteractable(false);
@@ -67,7 +68,9 @@ public class MAUnityManager : MonoBehaviour
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currWager);
-        // int[][] result3By4 = slotManager.GetCurrent3By4();  -- for debugging!
+        // update the balance for the JS message and UI
+        resultNumbers.newBalance = balance + resultNumbers.rtp;
+        balance = resultNumbers.newBalance;
         
         // show results (dramatically if possible)
         uiManager.SetResult(resultNumbers);
@@ -88,8 +91,6 @@ public class MAUnityManager : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void SendResults(string resultString);  
     // Takes in a string that encodes a result object into json for the extension to handle
-    private static extern void SendBalanceUpdate(string balanceString);  
-    // Takes in a string that encodes a float for the extension to handle
     #endif
     
     private void ParseAndSendResult(Spinners.SpinResult resultNumbers)
@@ -137,8 +138,7 @@ public class MAUnityManager : MonoBehaviour
         
         balance = realBalance;
         uiManager.SetBalance(balance);
-    } 
-    
+    }
     #endregion
     
     #region Setup

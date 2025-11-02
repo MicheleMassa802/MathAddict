@@ -107,6 +107,7 @@ public class UIDisplayer : MonoBehaviour
         
         // clean up
         DisplayResultText(resultNumbers);
+        SetBalance(resultNumbers.newBalance);
         reelIndexes[0] = resultNumbers.reel1Index;
         reelIndexes[1] = resultNumbers.reel2Index;
         reelIndexes[2] = resultNumbers.reel3Index;
