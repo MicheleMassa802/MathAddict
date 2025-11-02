@@ -99,7 +99,7 @@ function handleResultBox(resultBox) {
 
     } else if (isIncorrect) {
         console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
-        
+
     } else {
         console.log(debugPrefix, '[HandleResultBox] WTF is that answer being detected bro, be fr...');
     }
@@ -145,6 +145,31 @@ function endQuestionTimer() {
     index = Math.min(index, allWagers.length - 1);
     currentWager = allWagers[index];
 }
+
+/////////////////////////
+// Player Data Storage //
+/////////////////////////
+const playerBalanceKey = "playerBalance"
+let playerBalance;
+
+function savePlayerData(newBalance) {
+    chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
+        console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', newBalance);
+    });
+}
+
+function loadPlayerData() {
+    chrome.storage.sync.get(playerBalanceKey, (res) => {
+        if (res.playerBalance !== undefined) {
+            playerBalance = res.playerBalance;
+            console.log(debugPrefix, '[LoadPlayerData] Balance Loaded: ', playerBalance);
+        } else {
+            playerBalance = 0.0;
+            console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $0.0');
+        }
+    });
+}
+
 
 // inject unity loader instance result into page context
 const script = document.createElement('script');
