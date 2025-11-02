@@ -2,9 +2,10 @@ let divActive = false;
 const extensionDivId = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
 
+///////////////////////////////////////////
+// Listening for start signal from popup //
+///////////////////////////////////////////
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // handle receiving the signals from popup.js
-
     if (request.action === "appendDiv" && !divActive) {
         console.log(debugPrefix, "[HandlePopupResponse] Starting Unity Slots Div");
 
@@ -48,12 +49,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-window.addEventListener("message", (event) => {
-    if (event.data?.type === "unityResult") {
-        console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
-    }
-});
 
+////////////////////////////////////////
+// Detecting Question Response Events //
+////////////////////////////////////////
 const observer = new MutationObserver((mutations) => {
 
     for (const mutation of mutations) {
@@ -82,6 +81,9 @@ const observer = new MutationObserver((mutations) => {
 });
 
 function handleResultBox(resultBox) {
+    // call time
+    endQuestionTimer();
+
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
@@ -92,11 +94,12 @@ function handleResultBox(resultBox) {
         iframe.contentWindow.postMessage({
             type: 'UNITY_COMMAND',
             method: 'SetWager',
-            value: '100.5'
+            value: currentWager.toString(),
         }, '*');
 
     } else if (isIncorrect) {
         console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
+        
     } else {
         console.log(debugPrefix, '[HandleResultBox] WTF is that answer being detected bro, be fr...');
     }
@@ -106,6 +109,42 @@ observer.observe(document.body, {
     childList: true,
     subtree: true,
 });
+
+//////////////////////////////
+// Debugging Unity Messages //
+//////////////////////////////
+window.addEventListener("message", (event) => {
+    if (event.data?.type === "unityResult") {
+        console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
+    }
+});
+
+
+/////////////////////////////
+// Timing Logic for Wagers //
+/////////////////////////////
+const minWager = 1;
+const lowWager = 2;
+const midWager = 5;
+const highWager = 10;
+const maxWager = 25;
+const allWagers = [maxWager, highWager, midWager, lowWager, minWager];
+const wagerTimeSteps = 25;  // every 25 seconds, the wager becomes lower
+
+let startTime;
+let currentWager = 0.0;
+
+function startQuestionTimer() {
+    startTime = Date.now();
+}
+
+function endQuestionTimer() {
+    const endTime = Date.now();
+    const questionTimeSeconds = (endTime - startTime) / 1000;
+    let index = Math.floor(questionTimeSeconds / wagerTimeSteps);
+    index = Math.min(index, allWagers.length - 1);
+    currentWager = allWagers[index];
+}
 
 // inject unity loader instance result into page context
 const script = document.createElement('script');
