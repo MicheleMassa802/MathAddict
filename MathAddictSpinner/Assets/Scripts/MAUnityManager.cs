@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using System.Runtime.InteropServices;
 
 /*
  * Puts everything together, managing spins and UI and marrying them together into a not very happy couple,
