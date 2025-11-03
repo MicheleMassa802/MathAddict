@@ -38,9 +38,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (div) {
             div.remove();
             divActive = false;
-            sendResponse({ status: "removed" });
+            sendResponse({status: "removed"});
         } else {
-            sendResponse({ status: "Div to remove not found" });
+            sendResponse({status: "Div to remove not found"});
         }
 
     } else {
@@ -81,21 +81,15 @@ const observer = new MutationObserver((mutations) => {
 });
 
 function handleResultBox(resultBox) {
-    // call time
-    endQuestionTimer();
+    // call time to compute wager to send
+    const currentWager = endQuestionTimer();
 
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
     if (isCorrect) {
         console.log(debugPrefix, '[HandleResultBox] CORRECT answer detected');
-        // call Unity to set the wager
-        const iframe = document.querySelector('iframe[src*="GameBuild/index.html"]');
-        iframe.contentWindow.postMessage({
-            type: 'UNITY_COMMAND',
-            method: 'SetWager',
-            value: currentWager.toString(),
-        }, '*');
+        sendMessageToUnity("SetWager", currentWager.toString())
 
     } else if (isIncorrect) {
         console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
@@ -110,12 +104,29 @@ observer.observe(document.body, {
     subtree: true,
 });
 
+
 //////////////////////////////
 // Debugging Unity Messages //
 //////////////////////////////
 window.addEventListener("message", (event) => {
     if (event.data?.type === "unityResult") {
         console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
+        // keep balance up to date!
+        const parsedJson = JSON.parse(event.data.payload);
+        const newBalance = parsedJson?.newBalance;
+        if (newBalance > 0) {
+            savePlayerData(newBalance);
+        } else {
+            console.log(debugPrefix, "[HandleUnityMessage] Balance returned not valid, won't update!");
+        }
+
+    } else if (event.data?.type === "unityReady") {
+        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
+
+        // go through startup sequence
+        const playerBalance = loadPlayerData();
+        sendMessageToUnity("SetBalance", playerBalance.toString());
+        startQuestionTimer();
     }
 });
 
@@ -132,7 +143,6 @@ const allWagers = [maxWager, highWager, midWager, lowWager, minWager];
 const wagerTimeSteps = 25;  // every 25 seconds, the wager becomes lower
 
 let startTime;
-let currentWager = 0.0;
 
 function startQuestionTimer() {
     startTime = Date.now();
@@ -143,14 +153,13 @@ function endQuestionTimer() {
     const questionTimeSeconds = (endTime - startTime) / 1000;
     let index = Math.floor(questionTimeSeconds / wagerTimeSteps);
     index = Math.min(index, allWagers.length - 1);
-    currentWager = allWagers[index];
+    return allWagers[index];
 }
 
 /////////////////////////
 // Player Data Storage //
 /////////////////////////
 const playerBalanceKey = "playerBalance"
-let playerBalance;
 
 function savePlayerData(newBalance) {
     chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
@@ -159,20 +168,39 @@ function savePlayerData(newBalance) {
 }
 
 function loadPlayerData() {
+    let playerBalance = 0.0;
+
     chrome.storage.sync.get(playerBalanceKey, (res) => {
         if (res.playerBalance !== undefined) {
             playerBalance = res.playerBalance;
-            console.log(debugPrefix, '[LoadPlayerData] Balance Loaded: ', playerBalance);
+            console.log(debugPrefix, '[LoadPlayerData] Balance Loaded $', playerBalance);
         } else {
             playerBalance = 0.0;
-            console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $0.0');
+            console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', playerBalance);
         }
     });
+
+    return playerBalance;
 }
 
+
+//////////
+// Misc //
+//////////
 
 // inject unity loader instance result into page context
 const script = document.createElement('script');
 script.src = chrome.runtime.getURL('src/unityRelay.js');
 script.onload = () => script.remove();
 (document.head || document.documentElement).appendChild(script);
+
+
+function sendMessageToUnity(method, arg) {
+    // calls the given method while passing through the string arg
+    const iframe = document.querySelector('iframe[src*="GameBuild/index.html"]');
+    iframe.contentWindow.postMessage({
+        type: 'UNITY_COMMAND',
+        method: method,
+        value: arg,
+    }, '*');
+}

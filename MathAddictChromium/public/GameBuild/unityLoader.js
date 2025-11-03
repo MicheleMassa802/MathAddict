@@ -1,4 +1,6 @@
 // extracting the index.html inline script to avoid CSP restrictions
+// this works INSIDE the iframe context that runs AS A CHILD of the main page
+// keep that in mind when sending messages!
 
 var container = document.querySelector("#unity-container");
 var canvas = document.querySelector("#unity-canvas");
@@ -79,9 +81,17 @@ script.src = loaderUrl;
 script.onload = () => {
     createUnityInstance(canvas, config, (progress) => {
         progressBarFull.style.width = 100 * progress + "%";
+
     }).then((unityInstance) => {
         window.unityInstance = unityInstance;
         loadingBar.style.display = "none";
+
+        // notify content.js
+        window.parent.postMessage({
+            source: "UnityLoader",
+            type: "unityReady"
+        }, "*");
+
     }).catch((message) => {
         alert(message);
     });
