@@ -45,7 +45,6 @@ public class UIDisplayer : MonoBehaviour
         spinOutcomeText?.SetText(UIConstants.onHoldText);
         wagerText?.SetText($"{UIConstants.wagerText}00.00");
         lastWinText?.SetText($"{UIConstants.lastWinText}00.00");
-        SetSpinButtonInteractable(true);
     }
 
     public void SwitchScreens(bool toSlots)
@@ -208,12 +207,31 @@ public class UIDisplayer : MonoBehaviour
     private IEnumerator AnimateButtonClickable(Image buttonImage, Color32 pulsingColor)
     {
         var baseColor = new Color32(200, 200, 200, 155);
-        bool usePulsingColor = false;
-
-        while (true) {
-            buttonImage.color = usePulsingColor ? pulsingColor : baseColor;
-            usePulsingColor = !usePulsingColor;
-            yield return new WaitForSeconds(1.5f);  // seconds between color toggles
+        var currColor = pulsingColor;
+        float currAlpha = 155;
+        float alphaRate = 155 * 0.25f;
+        int minAlpha = 0, maxAlpha = 155;
+        bool alphaIncreasing = false;
+        while (true) 
+        {
+            currAlpha = alphaIncreasing ? currAlpha + alphaRate : currAlpha - alphaRate;
+            if (currAlpha < minAlpha) 
+            { 
+                // switch color and start increasing alpha
+                currColor = currColor.CompareRGB(baseColor) ? pulsingColor : baseColor;
+                alphaIncreasing = true;
+                currAlpha = minAlpha;
+            } 
+            else if (currAlpha > maxAlpha) 
+            {
+                // start decreasing alpha
+                alphaIncreasing = false;
+                currAlpha = maxAlpha;
+            } 
+            
+            currColor.a = (byte)currAlpha;
+            buttonImage.color = currColor;
+            yield return new WaitForSeconds(0.1f);
         }
     }
     #endregion

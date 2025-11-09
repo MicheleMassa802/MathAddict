@@ -33,9 +33,10 @@ public class MAUnityManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(this.gameObject);
         SetupSessionReels();
+        #if UNITY_EDITOR
         wagers.Enqueue(Random.Range(1f, 5f));
-        wagers.Enqueue(Random.Range(1f, 5f));
-        wagers.Enqueue(Random.Range(1f, 5f));
+        #endif
+        uiManager.SetSpinButtonInteractable(wagers.Count > 0);
     }
     
     private void Start()
