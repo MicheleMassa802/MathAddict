@@ -130,6 +130,7 @@ public class MAUnityManager : MonoBehaviour
         
         // by default we set the wager that then gets triggered by our spin!
         wagers.Enqueue(realWager);
+        uiManager.SetWager(realWager);
         uiManager.SetSpinButtonInteractable(wagers.Count > 0);
     }
     
