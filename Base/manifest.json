@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Math Addict",
+  "version": "0.0.2",
+  "description": "A basic demo of what MathAddict will be able to do.",
+
+
+  "icons": {
+    "32": "static/WaveTempIcon.png"
+  },
+
+
+  "background": {
+    "service_worker": "src/service_worker.js",
+    "type": "module"
+  },
+
+
+  "action": {
+    "default_popup": "pages/index.html"
+  },
+
+
+  "permissions": [
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}
