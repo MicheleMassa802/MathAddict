@@ -1,5 +1,6 @@
 const debugPrefix = "[MathAddict][Popup]";
 const targetHost = "mathacademy.com";
+const targetPage = "mathacademy.com/tasks/";
 
 const appendElement = "appendDiv";
 const removeElement = "removeDiv";
@@ -42,6 +43,7 @@ function handleRemoveDivClick() {
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currUrl = tabs[0]?.url || "";
     const inTargetSite = currUrl.includes(targetHost);
+    const inTargetPage = currUrl.includes(targetPage);
 
     const appendBtn = document.getElementById(appendElement);
     const removeBtn = document.getElementById(removeElement);
@@ -51,6 +53,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         appendBtn.disabled = true;
         removeBtn.disabled = true;
         status.textContent = "This extension only works on " + targetHost + "!";
+    } else if (!inTargetPage) {
+        appendBtn.disabled = true;
+        removeBtn.disabled = true;
+        status.textContent = "This extension only works on task pages!";
     }
 });
 

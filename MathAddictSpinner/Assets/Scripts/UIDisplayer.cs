@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 /*
@@ -18,7 +19,8 @@ public class UIDisplayer : MonoBehaviour
     
     // Reels
     [SerializeField] private List<TextMeshProUGUI> orderedReelTextObjects;  // ordered from 11-13...1X-4X (12)
-    [SerializeField] private Button spinButton; 
+    [SerializeField] private Button spinButton;
+    [FormerlySerializedAs("spinButtonBorder")] [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
     [SerializeField] private TextMeshProUGUI spinButtonText; 
@@ -30,10 +32,12 @@ public class UIDisplayer : MonoBehaviour
 
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
     private int spinCoroutineCounter = 0;
+    private Coroutine spinButtonPulse;
     
     private void Start()
     {
-        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText || !balanceText || orderedReelTextObjects.Count < 12)
+        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText ||
+            !spinButtonImage || !balanceText || orderedReelTextObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
         }
@@ -41,7 +45,7 @@ public class UIDisplayer : MonoBehaviour
         spinOutcomeText?.SetText(UIConstants.onHoldText);
         wagerText?.SetText($"{UIConstants.wagerText}00.00");
         lastWinText?.SetText($"{UIConstants.lastWinText}00.00");
-        SetSpinButtonInteractable(false);
+        SetSpinButtonInteractable(true);
     }
 
     public void SwitchScreens(bool toSlots)
@@ -50,10 +54,10 @@ public class UIDisplayer : MonoBehaviour
         slotScreen.SetActive(toSlots);
     }
 
-    public void SetResult(Spinners.SpinResult resultNumbers)
+    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen)
     {
         // start spin animation from current indexes up to result indexes
-        StartCoroutine(AnimateSlotSpin(resultNumbers));
+        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen));
     }
 
     public void SetWager(float wager)
@@ -71,7 +75,7 @@ public class UIDisplayer : MonoBehaviour
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
     
-    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers)
+    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen)
     {
         // prep to start animations
         SetSpinButtonInteractable(false);
@@ -112,9 +116,9 @@ public class UIDisplayer : MonoBehaviour
         reelIndexes[1] = resultNumbers.reel2Index;
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
-        // its important we don't set the spin button as interactable here again
-        // as its interact-ability is controlled by the wagers computed and sent
-        // to Unity by JS
+        
+        // depending on the wagers queue, the button could still be seen as interactable
+        SetSpinButtonInteractable(wagersQueueLen > 0);
     }
     
     // sets the items for a reel triplet for a frame of the animation
@@ -180,7 +184,37 @@ public class UIDisplayer : MonoBehaviour
             spinButtonText.color = spinButtonTextColor;
             
             // show the user they can spin through an animation
-            // TODO!
+            ToggleSpinButtonAnimation(interactable);
         }
     }
+
+    private void ToggleSpinButtonAnimation(bool startAnimation)
+    {
+        if (spinButtonPulse != null && !startAnimation)
+        {
+            StopCoroutine(spinButtonPulse);
+            spinButtonPulse = null;
+            spinButtonImage.color = new Color32(200, 200, 200, 155);
+        }
+        else if (spinButtonPulse == null &&  startAnimation)
+        {
+            spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
+        }
+    }
+
+    #region UI Animations
+
+    // Makes the buttonBorder provided pulse with a color pulsingColor
+    private IEnumerator AnimateButtonClickable(Image buttonImage, Color32 pulsingColor)
+    {
+        var baseColor = new Color32(200, 200, 200, 155);
+        bool usePulsingColor = false;
+
+        while (true) {
+            buttonImage.color = usePulsingColor ? pulsingColor : baseColor;
+            usePulsingColor = !usePulsingColor;
+            yield return new WaitForSeconds(1.5f);  // seconds between color toggles
+        }
+    }
+    #endregion
 }

@@ -33,6 +33,9 @@ public class MAUnityManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(this.gameObject);
         SetupSessionReels();
+        wagers.Enqueue(Random.Range(1f, 5f));
+        wagers.Enqueue(Random.Range(1f, 5f));
+        wagers.Enqueue(Random.Range(1f, 5f));
     }
     
     private void Start()
@@ -41,8 +44,6 @@ public class MAUnityManager : MonoBehaviour
         {
             Debug.LogError($"One of {nameof(slotManager)} or {nameof(uiManager)} is null!");
         }
-        
-        // TODO: request balance from JS
     }
 
     public void OnSpinTriggered()
@@ -73,8 +74,8 @@ public class MAUnityManager : MonoBehaviour
         resultNumbers.newBalance = balance + resultNumbers.rtp;
         balance = resultNumbers.newBalance;
         
-        // show results (dramatically if possible)
-        uiManager.SetResult(resultNumbers);
+        // show results, send in the updated wagers count to decide if the button stays interactable
+        uiManager.SetResult(resultNumbers, wagers.Count);
         
         // add to wallet (dramatically if possible)
         ParseAndSendResult(resultNumbers);

@@ -56,6 +56,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const observer = new MutationObserver((mutations) => {
 
     for (const mutation of mutations) {
+        // handle node additions -- answering questions and getting a correct/incorrect
         for (const node of mutation.addedNodes) {
 
             if (!(node instanceof HTMLElement)) {
@@ -65,24 +66,36 @@ const observer = new MutationObserver((mutations) => {
             // Check if the added node itself is the result box
             if (node.classList.contains('questionWidget-result')) {
                 handleResultBox(node);
-                continue;
+                return;
             }
 
-            // Or if it contains the result box somewhere inside
+            // OR if it contains the result box somewhere inside
             const resultBox = node.querySelector('.questionWidget-result');
             if (resultBox) {
                 handleResultBox(resultBox);
                 return;  // early return
             }
         }
+
+        // OR handle "disappearing" 'continue' buttons => reset start timer
+        if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+            const target = mutation.target;
+            if (target instanceof HTMLElement && target.classList.contains('continueButton')) {
+                const displayStyle = window.getComputedStyle(target).display;
+                if (displayStyle === 'none') {
+                    // just switched from 'block' -> 'none' implies 'continue' btn dismissed
+                    handleContinueButtonDismissed();
+                }
+            }
+        }
     }
 
-    console.log(debugPrefix, "[AnalyzeMutations] No question result box found in Mutated Nodes");
+    console.log(debugPrefix, "[AnalyzeMutations] No question result box or continue style change found in Mutated Nodes");
 });
 
 function handleResultBox(resultBox) {
     // call time to compute wager to send
-    const currentWager = endQuestionTimer();
+    const currentWager = endQuestionTimerAndFetchWager();
 
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
@@ -99,9 +112,17 @@ function handleResultBox(resultBox) {
     }
 }
 
+function handleContinueButtonDismissed() {
+    // continue clicked and dismissed => start of lesson / start of new question
+    console.log(debugPrefix, '[HandleContinueButtonDismissed] CONTINUE button clicked!');
+    startQuestionTimer();
+}
+
 observer.observe(document.body, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class'],
 });
 
 
@@ -115,7 +136,10 @@ window.addEventListener("message", (event) => {
         const parsedJson = JSON.parse(event.data.payload);
         const newBalance = parsedJson?.newBalance;
         if (newBalance > 0) {
-            savePlayerData(newBalance);
+            savePlayerData(newBalance, (newBalance) => {
+                // callback when save is finished
+                console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', newBalance);
+            });
         } else {
             console.log(debugPrefix, "[HandleUnityMessage] Balance returned not valid, won't update!");
         }
@@ -124,8 +148,16 @@ window.addEventListener("message", (event) => {
         console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
 
         // go through startup sequence
-        const playerBalance = loadPlayerData();
-        sendMessageToUnity("SetBalance", playerBalance.toString());
+        loadPlayerData((loadedBalance) => {
+            // callback when load is finished
+            if (loadedBalance > 0) {
+                sendMessageToUnity("SetBalance", loadedBalance.toString());
+                console.log(debugPrefix, '[LoadPlayerData] Balance Loaded $', loadedBalance);
+            } else {
+                console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', loadedBalance);
+            }
+        });
+
         startQuestionTimer();
     }
 });
@@ -142,16 +174,17 @@ const maxWager = 25;
 const allWagers = [maxWager, highWager, midWager, lowWager, minWager];
 const wagerTimeSteps = 25;  // every 25 seconds, the wager becomes lower
 
-let startTime;
+let startTime = Date.now();
 
 function startQuestionTimer() {
     startTime = Date.now();
 }
 
-function endQuestionTimer() {
+function endQuestionTimerAndFetchWager() {
     const endTime = Date.now();
     const questionTimeSeconds = (endTime - startTime) / 1000;
     let index = Math.floor(questionTimeSeconds / wagerTimeSteps);
+    console.log(debugPrefix, "[Timer] End time VS Start Time VS Diff in (s): " + endTime.toString() + " - " + startTime.toString() + " - " + questionTimeSeconds + " - " + index);
     index = Math.min(index, allWagers.length - 1);
     return allWagers[index];
 }
@@ -161,26 +194,19 @@ function endQuestionTimer() {
 /////////////////////////
 const playerBalanceKey = "playerBalance"
 
-function savePlayerData(newBalance) {
+function savePlayerData(newBalance, callback) {
     chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
-        console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', newBalance);
+        if (typeof callback === 'function') {
+            callback(newBalance);
+        }
     });
 }
 
-function loadPlayerData() {
-    let playerBalance = 0.0;
-
+function loadPlayerData(callback) {
     chrome.storage.sync.get(playerBalanceKey, (res) => {
-        if (res.playerBalance !== undefined) {
-            playerBalance = res.playerBalance;
-            console.log(debugPrefix, '[LoadPlayerData] Balance Loaded $', playerBalance);
-        } else {
-            playerBalance = 0.0;
-            console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', playerBalance);
-        }
+        const storedBalance = res[playerBalanceKey] ?? 0.0;
+        callback(storedBalance);
     });
-
-    return playerBalance;
 }
 
 
