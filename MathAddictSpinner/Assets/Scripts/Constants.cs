@@ -46,7 +46,7 @@ public static class GameConstants
     public const int jackpotSymbol = 15;  // 'x'
     public const bool isDebugMode = true;
 
-    public const int spinFrames = 300;  // 5 seconds
+    public const float defaultSpinDuration = 5f;  // 5 seconds
     public static readonly List<int> reelSpinsLimits = new List<int> { 150, 200, 250, 300 };
 }
 

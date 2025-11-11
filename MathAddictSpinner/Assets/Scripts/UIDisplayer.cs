@@ -20,7 +20,7 @@ public class UIDisplayer : MonoBehaviour
     // Reels
     [SerializeField] private List<TextMeshProUGUI> orderedReelTextObjects;  // ordered from 11-13...1X-4X (12)
     [SerializeField] private Button spinButton;
-    [FormerlySerializedAs("spinButtonBorder")] [SerializeField] private Image spinButtonImage;
+    [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
     [SerializeField] private TextMeshProUGUI spinButtonText; 
@@ -31,7 +31,7 @@ public class UIDisplayer : MonoBehaviour
     #endregion
 
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
-    private int spinCoroutineCounter = 0;
+    private float elapsedCoroutineTime = 0;
     private Coroutine spinButtonPulse;
     
     private void Start()
@@ -53,10 +53,10 @@ public class UIDisplayer : MonoBehaviour
         slotScreen.SetActive(toSlots);
     }
 
-    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen)
+    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem)
     {
         // start spin animation from current indexes up to result indexes
-        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen));
+        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen, soundSystem));
     }
 
     public void SetWager(float wager)
@@ -74,42 +74,51 @@ public class UIDisplayer : MonoBehaviour
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
     
-    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen)
+    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem)
     {
         // prep to start animations
         SetSpinButtonInteractable(false);
-        spinCoroutineCounter = 0;
+        elapsedCoroutineTime = 0;
+        soundSystem.PlaySpinSound();
         
         List<int> counterDivisors = SpinnerConstants.reelSpinsDivisors;
         List<int> spinLimits = GameConstants.reelSpinsLimits;
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
-        int spinFrames = GameConstants.spinFrames;
+        float spinDuration = GameConstants.defaultSpinDuration;
         int len = SpinnerConstants.reelLength;
         
         // go through the 5 seconds of spin
-        while (spinCoroutineCounter < spinFrames)
+        while (elapsedCoroutineTime < spinDuration)
         {
             for (int i = 0; i < counterDivisors.Count; i++)
             {
-                if (spinCoroutineCounter % counterDivisors[i] != 0 && spinCoroutineCounter < spinLimits[i])
+                if (elapsedCoroutineTime % counterDivisors[i] != 0 && elapsedCoroutineTime < spinLimits[i])
                 {
                     // spin the corresponding reel
                     SetReelTriplet(i + 1, (reelIndexes[i] + spinCoroutineCounter) % len);
                 } 
-                else if (spinCoroutineCounter == spinLimits[i])
+                else if (elapsedCoroutineTime == spinLimits[i])
                 {
                     // settle down on the true values
                     SetReelTriplet(i + 1, resultIndices[i]);
                 }
             }
             
-            spinCoroutineCounter += 1;
+            elapsedCoroutineTime += Time.deltaTime;
             yield return null;
         }
         
         // clean up
         DisplayResultText(resultNumbers);
+        if (resultNumbers.rtp > 0)
+        {
+            soundSystem.PlayWinSound(resultNumbers.jackpotTriggered);
+        }
+        else
+        {
+            soundSystem.PlayLoseSound();
+        }
         SetBalance(resultNumbers.newBalance);
         reelIndexes[0] = resultNumbers.reel1Index;
         reelIndexes[1] = resultNumbers.reel2Index;

@@ -18,6 +18,7 @@ public class MAUnityManager : MonoBehaviour
     // set on GameObject
     [SerializeField] private Spinners slotManager;
     [SerializeField] private UIDisplayer uiManager;
+    [SerializeField] private SoundSystem soundManager;
     
     // stored by the game manager for ease of access by other objects
     public List<List<int>> reels;  // 1 through 4
@@ -41,10 +42,13 @@ public class MAUnityManager : MonoBehaviour
     
     private void Start()
     {
-        if (!slotManager || !uiManager)
+        if (!slotManager || !uiManager || !soundManager)
         {
             Debug.LogError($"One of {nameof(slotManager)} or {nameof(uiManager)} is null!");
         }
+        soundManager.PlayBgm();
+        
+        wagers.Enqueue(Random.Range(1f, 5f));  // TO DEBUG INSIDE UNITY
     }
 
     public void OnSpinTriggered()
@@ -76,7 +80,7 @@ public class MAUnityManager : MonoBehaviour
         balance = resultNumbers.newBalance;
         
         // show results, send in the updated wagers count to decide if the button stays interactable
-        uiManager.SetResult(resultNumbers, wagers.Count);
+        uiManager.SetResult(resultNumbers, wagers.Count, soundManager);
         
         // add to wallet (dramatically if possible)
         ParseAndSendResult(resultNumbers);
