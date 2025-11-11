@@ -47,8 +47,6 @@ public class MAUnityManager : MonoBehaviour
             Debug.LogError($"One of {nameof(slotManager)} or {nameof(uiManager)} is null!");
         }
         soundManager.PlayBgm();
-        
-        wagers.Enqueue(Random.Range(1f, 5f));  // TO DEBUG INSIDE UNITY
     }
 
     public void OnSpinTriggered()

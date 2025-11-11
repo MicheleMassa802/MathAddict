@@ -81,14 +81,15 @@ public class UIDisplayer : MonoBehaviour
         elapsedCoroutineTime = 0;
         soundSystem.PlaySpinSound();
         
-        List<int> counterDivisors = SpinnerConstants.reelSpinsDivisors;
-        List<int> spinLimits = GameConstants.reelSpinsLimits;
+        List<float> counterDivisors = SpinnerConstants.reelSpinsDivisors;
+        List<float> spinLimits = SpinnerConstants.reelSpinsLimits;
+        List<bool> settledLanes = new () {false, false, false, false};
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
-        float spinDuration = GameConstants.defaultSpinDuration;
+        float spinDuration = SpinnerConstants.defaultSpinDuration;
         int len = SpinnerConstants.reelLength;
         
-        // go through the 5 seconds of spin
+        // go through the X seconds of spin
         while (elapsedCoroutineTime < spinDuration)
         {
             for (int i = 0; i < counterDivisors.Count; i++)
@@ -96,12 +97,13 @@ public class UIDisplayer : MonoBehaviour
                 if (elapsedCoroutineTime % counterDivisors[i] != 0 && elapsedCoroutineTime < spinLimits[i])
                 {
                     // spin the corresponding reel
-                    SetReelTriplet(i + 1, (reelIndexes[i] + spinCoroutineCounter) % len);
+                    SetReelTriplet(i + 1, (reelIndexes[i] + (int)(elapsedCoroutineTime * 60)) % len);
                 } 
-                else if (elapsedCoroutineTime == spinLimits[i])
+                else if (!settledLanes[i] && elapsedCoroutineTime >= spinLimits[i])
                 {
                     // settle down on the true values
                     SetReelTriplet(i + 1, resultIndices[i]);
+                    settledLanes[i] = true;  // avoid settling multiple times
                 }
             }
             
@@ -172,7 +174,7 @@ public class UIDisplayer : MonoBehaviour
     public void ResetToDefaults()
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
-        spinCoroutineCounter = 0; 
+        elapsedCoroutineTime = 0; 
         SetSpinToWinText();
     }
 

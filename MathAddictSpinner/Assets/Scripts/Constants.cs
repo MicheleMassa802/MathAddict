@@ -12,7 +12,21 @@ public static class SpinnerConstants
     public const int numberOfReels = 4;
     public const int numberOfSymbols = 8;
     public const int reelLength = 15;
-    public static readonly List<int> reelSpinsDivisors = new List<int> { 3, 5, 6, 10 };
+    public const float defaultSpinDuration = 5f;  // 5 seconds
+    public static readonly List<float> reelSpinsDivisors = new List<float>
+    {
+        defaultSpinDuration / 100,
+        defaultSpinDuration / 60,
+        defaultSpinDuration / 50,
+        defaultSpinDuration / 30
+    };
+    public static readonly List<float> reelSpinsLimits = new List<float>
+    {
+        defaultSpinDuration / 3,
+        defaultSpinDuration / 2,
+        defaultSpinDuration * 2 / 3,
+        defaultSpinDuration
+    };
     
     public static readonly Dictionary<int, string> symbolsMap = new()
     {
@@ -40,14 +54,23 @@ public static class SpinnerConstants
 
 public static class GameConstants
 {
+    public const bool isDebugMode = true;
+}
+
+public static class RewardConstants
+{
+    // jackpot
     public const float startingJackpot = 1000f;
     public const float jackpotWagerMultLB = 5f;
     public const float jackpotWagerMultUB = 12f;
     public const int jackpotSymbol = 15;  // 'x'
-    public const bool isDebugMode = true;
-
-    public const float defaultSpinDuration = 5f;  // 5 seconds
-    public static readonly List<int> reelSpinsLimits = new List<int> { 150, 200, 250, 300 };
+    
+    // regular
+    public const float multiSymbolMultiplier = 2f;
+    public const float midComboSymbolMultiplier = 1.5f;
+    public const float smallComboSymbolMultiplier = 1.25f;
+    public const float combo2Xwin = 10f;
+    public const float combo3x2xwin = 25f;
 }
 
 
