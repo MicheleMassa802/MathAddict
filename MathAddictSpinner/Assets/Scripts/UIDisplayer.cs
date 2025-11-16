@@ -175,12 +175,12 @@ public class UIDisplayer : MonoBehaviour
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
         elapsedCoroutineTime = 0; 
-        SetSpinToWinText();
+        SetSpinOutcomeText(UIConstants.onHoldText);
     }
 
-    public void SetSpinToWinText()
+    public void SetSpinOutcomeText(string text)
     {
-        spinOutcomeText?.SetText(UIConstants.onHoldText);
+        spinOutcomeText?.SetText(text);
     }
 
     public void SetSpinButtonInteractable(bool interactable)

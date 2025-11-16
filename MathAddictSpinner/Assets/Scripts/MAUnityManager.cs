@@ -73,7 +73,7 @@ public class MAUnityManager : MonoBehaviour
         }
         
         uiManager.SetWager(currWager);
-        uiManager.SetSpinToWinText();
+        uiManager.SetSpinOutcomeText(UIConstants.onHoldText);
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currWager);
@@ -150,8 +150,8 @@ public class MAUnityManager : MonoBehaviour
         }
         else
         {
-            // didn't get a wager :( => throw popup + sound!
-            // TODO: popup!
+            // didn't get a wager :( => throw result on screen + sound!
+            uiManager.SetSpinOutcomeText(UIConstants.noWagerReceivedText);
             soundManager.PlayTryAgainSound();
         }
         

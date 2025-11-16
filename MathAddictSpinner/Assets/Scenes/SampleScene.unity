@@ -706,7 +706,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 58.2
+  m_fontSize: 57.75
   m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1167,6 +1167,7 @@ MonoBehaviour:
   clickSpinSound: {fileID: 8300000, guid: efda2d53acd4c554ea4785d4c4133750, type: 3}
   winSound: {fileID: 8300000, guid: e0c1f98ad1d9aab4b924cadac7570670, type: 3}
   loseSound: {fileID: 8300000, guid: 2735b51531c6ba843803a76d744ea880, type: 3}
+  tryAgainSound: {fileID: 0}
   backgroundMusic: {fileID: 8300000, guid: 3a394620160f94c48bccf755af816873, type: 3}
 --- !u!224 &358460831 stripped
 RectTransform:
@@ -3660,7 +3661,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 29.1
+  m_fontSize: 28.85
   m_fontSizeBase: 26
   m_fontWeight: 400
   m_enableAutoSizing: 1

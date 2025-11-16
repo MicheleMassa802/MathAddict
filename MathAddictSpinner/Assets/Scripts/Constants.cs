@@ -85,6 +85,7 @@ public static class UIConstants
 {
     #region Misc Text
     public const string onHoldText = "Spin\n2\nwin!";
+    public const string noWagerReceivedText = "Try\nAgain!";
     public const string successText = "You've\nWON!";
     public const string jackpotText = "JACKPOT!";
     public const string lossText = "Try\nAgain!";
