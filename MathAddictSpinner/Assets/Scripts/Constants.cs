@@ -70,7 +70,7 @@ public static class RewardConstants
     public const float startingJackpot = 1000f;
     public const float jackpotWagerMultLB = 5f;
     public const float jackpotWagerMultUB = 12f;
-    public const int jackpotSymbol = 15;  // 'x'
+    public const int jackpotSymbol = 15;  // 'inf'
     
     // regular
     public const float multiSymbolMultiplier = 2f;
