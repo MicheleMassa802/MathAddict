@@ -116,7 +116,7 @@ public class Spinners : MonoBehaviour
     {
         // setup as 0s for everything
         Dictionary<int, int> currentSpinCounts = new Dictionary<int, int>();
-        foreach (int key in SpinnerConstants.symbolsMap.Keys)
+        foreach (int key in SpinnerConstants.symbolsMapKeys)
         {
             currentSpinCounts[key] = 0;
         }

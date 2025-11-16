@@ -35,18 +35,8 @@ public static class SpinnerConstants
         };
     }
     
-    public static readonly Dictionary<int, string> symbolsMap = new()
-    {
-        {25, "$"},
-        {18, "%"},
-        {15, "x"},
-        {12, "="},
-        {10, ">"},
-        {8,  "<"},
-        {5,  "+"},
-        {3,  "-"}
-    };
-
+    public static readonly List<int> symbolsMapKeys = new() { 25, 18, 15, 12, 10, 8, 5, 3};
+    
     // the contents of a reel are a permutation of this list
     public static readonly List<int> reelSetup = new() { 25, 18, 15, 12, 12, 10, 10, 8, 8, 5, 5, 5, 3, 3, 3};
     #endregion

@@ -18,7 +18,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private GameObject slotScreen;
     
     // Reels
-    [SerializeField] private List<TextMeshProUGUI> orderedReelTextObjects;  // ordered from 11-13...1X-4X (12)
+    [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
     [SerializeField] private Button spinButton;
     [SerializeField] private Image spinButtonImage;
     
@@ -28,8 +28,20 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI spinOutcomeText;
     [SerializeField] private TextMeshProUGUI lastWinText;
     [SerializeField] private TextMeshProUGUI balanceText;
+    
+    // Spinner Sprites
+    [SerializeField] private Sprite sigma;
+    [SerializeField] private Sprite infinity;
+    [SerializeField] private Sprite theta;
+    [SerializeField] private Sprite pi;
+    [SerializeField] private Sprite euler;
+    [SerializeField] private Sprite z;
+    [SerializeField] private Sprite y;
+    [SerializeField] private Sprite x;
+    
     #endregion
 
+    private Dictionary<int, Sprite> symbolsMap;
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
     private float elapsedCoroutineTime = 0;
     private Coroutine spinButtonPulse;
@@ -37,10 +49,29 @@ public class UIDisplayer : MonoBehaviour
     private void Start()
     {
         if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText ||
-            !spinButtonImage || !balanceText || orderedReelTextObjects.Count < 12)
+            !spinButtonImage || !balanceText || orderedReelImageObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
+            return;
         }
+        
+        if (!sigma || !infinity || !theta || !pi || !euler || !z || !y || !x)
+        {
+            Debug.LogError($"UI sprites are null. Check the GameObject {this.name}!");
+            return;
+        }
+        
+        symbolsMap = new() 
+        {
+            {25, sigma},
+            {18, infinity},
+            {15, theta},
+            {12, pi},
+            {10, euler},
+            {8,  z},
+            {5,  y},
+            {3,  x}
+        };
         
         spinOutcomeText?.SetText(UIConstants.onHoldText);
         wagerText?.SetText($"{UIConstants.wagerText}00.00");
@@ -111,6 +142,15 @@ public class UIDisplayer : MonoBehaviour
             yield return null;
         }
         
+        // make sure lanes settle (sometimes depending on timing, that 4th reel could not settle)
+        for (int i = 0; i < settledLanes.Count; i++)
+        {
+            if (!settledLanes[i])
+            {
+                SetReelTriplet(i + 1, resultIndices[i]);
+            }
+        }
+        
         // clean up
         DisplayResultText(resultNumbers);
         if (resultNumbers.rtp > 0)
@@ -145,7 +185,7 @@ public class UIDisplayer : MonoBehaviour
         for (int i = -1; i <= 1; i++)
         {
             int symbol = currReel[(reelIndex + i + len) % len];
-            orderedReelTextObjects[ (reelNumber - 1) * 3 + row].text = SpinnerConstants.symbolsMap[symbol];
+            orderedReelImageObjects[ (reelNumber - 1) * 3 + row].sprite = symbolsMap[symbol];
             row += 1;  // update row # for UI
         }
     }
@@ -223,7 +263,6 @@ public class UIDisplayer : MonoBehaviour
 
         // map input to outputs through log scaling, and then map that back between 5 and 10 seconds
         float rate = (Mathf.Log(timeDelta) - lbLn) / (ubLn - lbLn);
-        Debug.Log($"### Using timeDelta: {timeDelta}, we get a spinTime: {rate * 5f + 5f}");
         return rate * 5f + 5f;
     }
 
