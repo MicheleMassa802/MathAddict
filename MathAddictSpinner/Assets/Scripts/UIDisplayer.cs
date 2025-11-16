@@ -53,10 +53,10 @@ public class UIDisplayer : MonoBehaviour
         slotScreen.SetActive(toSlots);
     }
 
-    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem)
+    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // start spin animation from current indexes up to result indexes
-        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen, soundSystem));
+        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen, soundSystem, timeDelta));
     }
 
     public void SetWager(float wager)
@@ -74,19 +74,19 @@ public class UIDisplayer : MonoBehaviour
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
     
-    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem)
+    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
         SetSpinButtonInteractable(false);
         elapsedCoroutineTime = 0;
         soundSystem.PlaySpinSound();
         
-        List<float> counterDivisors = SpinnerConstants.reelSpinsDivisors;
-        List<float> spinLimits = SpinnerConstants.reelSpinsLimits;
+        float spinDuration = ComputeSpinTime(timeDelta);
+        List<float> counterDivisors = SpinnerConstants.GetReelSpinsDivisors(spinDuration);
+        List<float> spinLimits = SpinnerConstants.GetReelSpinsLimits(spinDuration);
         List<bool> settledLanes = new () {false, false, false, false};
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
-        float spinDuration = SpinnerConstants.defaultSpinDuration;
         int len = SpinnerConstants.reelLength;
         
         // go through the X seconds of spin
@@ -210,6 +210,21 @@ public class UIDisplayer : MonoBehaviour
         {
             spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
         }
+    }
+
+    private float ComputeSpinTime(float timeDelta)
+    {
+        const float lbLn = 3.219f;
+        const float ubLn = 5.704f;
+        
+        // time delta can be anything from 0s -> +inf, so we clamp between 25s and 300s to avoid absurd values
+        // I define the log of these values as constants here for efficiency sake
+        timeDelta = Mathf.Clamp(timeDelta, 25f, 300f);
+
+        // map input to outputs through log scaling, and then map that back between 5 and 10 seconds
+        float rate = (Mathf.Log(timeDelta) - lbLn) / (ubLn - lbLn);
+        Debug.Log($"### Using timeDelta: {timeDelta}, we get a spinTime: {rate * 5f + 5f}");
+        return rate * 5f + 5f;
     }
 
     #region UI Animations

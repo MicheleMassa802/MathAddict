@@ -12,21 +12,28 @@ public static class SpinnerConstants
     public const int numberOfReels = 4;
     public const int numberOfSymbols = 8;
     public const int reelLength = 15;
-    public const float defaultSpinDuration = 5f;  // 5 seconds
-    public static readonly List<float> reelSpinsDivisors = new List<float>
+
+    public static List<float> GetReelSpinsDivisors(float spinDuration)
     {
-        defaultSpinDuration / 100,
-        defaultSpinDuration / 60,
-        defaultSpinDuration / 50,
-        defaultSpinDuration / 30
-    };
-    public static readonly List<float> reelSpinsLimits = new List<float>
+        return new List<float>
+        {
+            spinDuration / 100,
+            spinDuration / 60,
+            spinDuration / 50,
+            spinDuration / 30
+        }; 
+    }
+
+    public static List<float> GetReelSpinsLimits(float spinDuration)
     {
-        defaultSpinDuration / 3,
-        defaultSpinDuration / 2,
-        defaultSpinDuration * 2 / 3,
-        defaultSpinDuration
-    };
+        return new List<float>
+        {
+            spinDuration / 3,
+            spinDuration / 2,
+            spinDuration * 2 / 3,
+            spinDuration
+        };
+    }
     
     public static readonly Dictionary<int, string> symbolsMap = new()
     {

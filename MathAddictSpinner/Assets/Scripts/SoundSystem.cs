@@ -13,12 +13,15 @@ public class SoundSystem : MonoBehaviour
     [SerializeField] private AudioClip clickSpinSound;
     [SerializeField] private AudioClip winSound;
     [SerializeField] private AudioClip loseSound;
+    [SerializeField] private AudioClip tryAgainSound;
     [SerializeField] private AudioClip backgroundMusic;
+    
     #endregion
     
     private const float WinVolume = 0.6f;
     private const float JackpotVolume = 0.9f;
     private const float LoseVolume = 1f;
+    private const float TryAgainVolume = 0.5f;
     private const float SpinVolume = 0.7f;
     private const float MusicVolume = 0.2f;
     private const float MusicSecondaryVolume = 0.1f;
@@ -80,6 +83,11 @@ public class SoundSystem : MonoBehaviour
     public void PlayLoseSound()
     {
         PlaySfx(loseSound, LoseVolume);
+    }
+    
+    public void PlayTryAgainSound()
+    {
+        PlaySfx(tryAgainSound, TryAgainVolume);
     }
     
     public void PlayBgm()

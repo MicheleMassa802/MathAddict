@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -12,7 +13,7 @@ public class MAUnityManager : MonoBehaviour
     // This manager is a singleton
     public static MAUnityManager Instance;
     
-    private Queue<float> wagers = new();
+    private Queue<Tuple<float, float>> wagers = new();
     private float balance = 0f;
     
     // set on GameObject
@@ -35,7 +36,7 @@ public class MAUnityManager : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
         SetupSessionReels();
         #if UNITY_EDITOR
-        wagers.Enqueue(Random.Range(1f, 5f));
+        wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), 25f));
         #endif
         uiManager.SetSpinButtonInteractable(wagers.Count > 0);
     }
@@ -52,13 +53,16 @@ public class MAUnityManager : MonoBehaviour
     public void OnSpinTriggered()
     {
         float currWager;
+        float currTimeDelta;
         
         #if UNITY_EDITOR
-        wagers.Enqueue(Random.Range(1f, 5f));
+        wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), Random.Range(25f, 300f)));
         #endif
         
         if (wagers.Count > 0) {
-            currWager = wagers.Dequeue();
+            var tuple = wagers.Dequeue();
+            currWager = tuple.Item1;
+            currTimeDelta = tuple.Item2;
         }
         else 
         {
@@ -78,7 +82,7 @@ public class MAUnityManager : MonoBehaviour
         balance = resultNumbers.newBalance;
         
         // show results, send in the updated wagers count to decide if the button stays interactable
-        uiManager.SetResult(resultNumbers, wagers.Count, soundManager);
+        uiManager.SetResult(resultNumbers, wagers.Count, soundManager, currTimeDelta);
         
         // add to wallet (dramatically if possible)
         ParseAndSendResult(resultNumbers);
@@ -123,17 +127,34 @@ public class MAUnityManager : MonoBehaviour
         uiManager.ResetToDefaults();
     }
     
-    public void SetWager(string jsWager)
+    public void SetWager(string jsWagerAndTime)
     {
         // this method is called by JS when a question is completed, which then allows the player to spin
         // using the wagers they've accumulated in the wager queue
-        Debug.Log($"Received Wager: {jsWager}");
-        float realWager = float.Parse(jsWager);
+        Debug.Log($"Received Wager:Time: {jsWagerAndTime}");
+        string[] twoFloats = jsWagerAndTime.Split(':');
+        if (twoFloats.Length != 2)
+        {
+            Debug.LogError($"Array sent by JS for wager setting is of len != 2: {twoFloats.Length}");
+            return;
+        }
+        float realWager = float.Parse(twoFloats[0]);
+        float timeDelta = float.Parse(twoFloats[1]);
         
         // by default we set the wager that then gets triggered by our spin!
-        wagers.Enqueue(realWager);
-        uiManager.SetWager(realWager);
-        uiManager.SetSpinButtonInteractable(wagers.Count > 0);
+        if (realWager > 0)
+        {
+            wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
+            uiManager.SetWager(realWager);
+            uiManager.SetSpinButtonInteractable(wagers.Count > 0);
+        }
+        else
+        {
+            // didn't get a wager :( => throw popup + sound!
+            // TODO: popup!
+            soundManager.PlayTryAgainSound();
+        }
+        
     }
     
     public void SetBalance(string jsBalance)

@@ -2,6 +2,7 @@ let divActive = false;
 const extensionDivId = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
 
+
 ///////////////////////////////////////////
 // Listening for start signal from popup //
 ///////////////////////////////////////////
@@ -53,6 +54,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 ////////////////////////////////////////
 // Detecting Question Response Events //
 ////////////////////////////////////////
+const possibleWagers = [0, 0, 0, 0, 0, 0, 1, 2, 2, 5, 5, 10];
+
 const observer = new MutationObserver((mutations) => {
 
     for (const mutation of mutations) {
@@ -95,14 +98,16 @@ const observer = new MutationObserver((mutations) => {
 
 function handleResultBox(resultBox) {
     // call time to compute wager to send
-    const currentWager = endQuestionTimerAndFetchWager();
-
+    // const currentWager = endQuestionTimerAndFetchWager();
+    const timeDelta = endQuestionTimerAndFetchTimeDelta();
+    const currentWager = possibleWagers[Math.floor(Math.random() * possibleWagers.length)];
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
     if (isCorrect) {
         console.log(debugPrefix, '[HandleResultBox] CORRECT answer detected');
-        sendMessageToUnity("SetWager", currentWager.toString())
+        // send "<wager>:<timeDelta>" string!
+        sendMessageToUnity("SetWager", `${currentWager.toString()}:${timeDelta}`);
 
     } else if (isIncorrect) {
         console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
@@ -184,9 +189,13 @@ function endQuestionTimerAndFetchWager() {
     const endTime = Date.now();
     const questionTimeSeconds = (endTime - startTime) / 1000;
     let index = Math.floor(questionTimeSeconds / wagerTimeSteps);
-    console.log(debugPrefix, "[Timer] End time VS Start Time VS Diff in (s): " + endTime.toString() + " - " + startTime.toString() + " - " + questionTimeSeconds + " - " + index);
     index = Math.min(index, allWagers.length - 1);
     return allWagers[index];
+}
+
+function endQuestionTimerAndFetchTimeDelta() {
+    const endTime = Date.now();
+    return (endTime - startTime) / 1000;  // delta in seconds
 }
 
 /////////////////////////
