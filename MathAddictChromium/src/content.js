@@ -1,4 +1,5 @@
 let divActive = false;
+let secretActive = false;
 const extensionDivId = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
 
@@ -13,21 +14,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const div = document.createElement("div");
         div.id = extensionDivId;
         div.style.position = "fixed";
-        div.style.width = "400px";
-        div.style.height = "711px";
-        div.style.bottom = "10px";
+        div.style.width = "405px";
+        div.style.height = "716px";
         div.style.right = "10px";
-        div.style.backgroundColor = "#A46928";
-        div.style.padding = "10px";
+        div.style.bottom = "10px";
         div.style.zIndex = "9999";
+        div.style.display = "flex";
+        div.style.flexDirection = "column";
 
-        // bring in unity through an iframe to avoid CSP stuff
+        // reserve the top slot for the 'secret' ;)
+        const imgContainer = document.createElement("div");
+        imgContainer.id = "secretContainer";
+        imgContainer.style.width = "395px";
+        imgContainer.style.height = "250px";
+        imgContainer.style.display = "none";  // hidden
+        imgContainer.style.justifyContent = "center";
+        imgContainer.style.alignItems = "center";
+        div.appendChild(imgContainer);
+
+        // bring in unity through an iframe to avoid CSP stuff (+ a golden frame)
+        const border = document.createElement("div");
+        border.style.width = "405px";
+        border.style.height = "716px";
+        border.style.padding = "10px";
+        border.style.backgroundColor = "#A46928";
+        border.style.border = "none";
+        div.appendChild(border);
         const iframe = document.createElement("iframe");
         iframe.src = chrome.runtime.getURL("GameBuild/index.html");
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
+        iframe.style.width = "400px";
+        iframe.style.height = "711px";
         iframe.style.border = "none";
-        div.appendChild(iframe);
+        border.appendChild(iframe);
         document.body.appendChild(div);
 
         divActive = true;
@@ -42,6 +60,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({status: "removed"});
         } else {
             sendResponse({status: "Div to remove not found"});
+        }
+
+    } else if (request.action === "secretDiv" && divActive) {
+        // apply the 'secret' ;) on the reserved div
+        const imgContainer = document.getElementById("secretContainer");
+
+        if (imgContainer) {
+            if (!secretActive) {
+                // show the image
+                console.log(debugPrefix, "[HandlePopupResponse] Showing secret div");
+                if (!document.getElementById("secretImage")) {
+                    const img = document.createElement("img");
+                    img.id = "secretImage";
+                    img.src = chrome.runtime.getURL("EYES.png");
+                    const div = document.getElementById(extensionDivId);
+                    div.style.height = "966px";
+                    img.style.width = "395px";
+                    img.style.height = "250px";
+                    imgContainer.appendChild(img);
+                    secretActive = true;
+                }
+                imgContainer.style.display = "flex";
+
+            } else {
+                // hide the image
+                console.log(debugPrefix, "[HandlePopupResponse] Hiding secret div");
+                const img = document.getElementById("secretImage");
+                if (img) {
+                    img.remove();
+                    const div = document.getElementById(extensionDivId);
+                    div.style.height = "716px";
+                }
+                imgContainer.style.display = "none";
+                secretActive = false;
+            }
         }
 
     } else {

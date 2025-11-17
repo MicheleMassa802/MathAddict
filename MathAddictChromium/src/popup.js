@@ -4,6 +4,7 @@ const targetPage = "mathacademy.com/tasks/";
 
 const appendElement = "appendDiv";
 const removeElement = "removeDiv";
+const secretElement = "secretDiv";
 const statusElement = "status";
 
 function handleAppendDivClick() {
@@ -37,6 +38,24 @@ function handleRemoveDivClick() {
     });
 }
 
+function handleSecretDivClick() {
+    console.log(debugPrefix, "[handleSecretDivClick] Clicked button to append secret div!");
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, {
+                action: secretElement,
+                text: "Hello from the extension!",
+            }, (response) => {
+                console.log(debugPrefix, "[handleSecretDivClick] Secret message sent to content script. Response:", response);
+            });
+        } else {
+            console.error(debugPrefix, "[handleSecretDivClick] Can't send 'APPEND' message. No tab found for Content.js");
+        }
+    });
+}
+
 //////////////////////////
 // Control init buttons //
 //////////////////////////
@@ -62,4 +81,5 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
 document.getElementById(removeElement).addEventListener("click", handleRemoveDivClick);
+document.getElementById(secretElement).addEventListener("click", handleSecretDivClick);
 // appendDiv & removeDiv are the button element id
