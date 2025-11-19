@@ -39,10 +39,9 @@ public class Spinners : MonoBehaviour
         
         SpinResult spinResult = new SpinResult(GetRtp(wager), reel1Index, reel2Index, reel3Index, reel4Index, jackpotTriggered);
 
-        if (GameConstants.isDebugMode)
-        {
+        #if UNITY_EDITOR
             PrintMatrix(current3By4);
-        }
+        #endif
         
         return spinResult;
     }   

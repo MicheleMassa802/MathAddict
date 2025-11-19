@@ -47,7 +47,6 @@ public class MAUnityManager : MonoBehaviour
         {
             Debug.LogError($"One of {nameof(slotManager)} or {nameof(uiManager)} is null!");
         }
-        soundManager.PlayBgm();
     }
 
     public void OnSpinTriggered()
