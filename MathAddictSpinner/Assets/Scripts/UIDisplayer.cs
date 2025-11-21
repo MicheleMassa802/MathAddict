@@ -18,9 +18,9 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private GameObject slotScreen;
     
     // Reels
-    [SerializeField] private List<TextMeshProUGUI> orderedReelTextObjects;  // ordered from 11-13...1X-4X (12)
+    [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
     [SerializeField] private Button spinButton;
-    [FormerlySerializedAs("spinButtonBorder")] [SerializeField] private Image spinButtonImage;
+    [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
     [SerializeField] private TextMeshProUGUI spinButtonText; 
@@ -28,19 +28,50 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI spinOutcomeText;
     [SerializeField] private TextMeshProUGUI lastWinText;
     [SerializeField] private TextMeshProUGUI balanceText;
+    
+    // Spinner Sprites
+    [SerializeField] private Sprite sigma;
+    [SerializeField] private Sprite infinity;
+    [SerializeField] private Sprite theta;
+    [SerializeField] private Sprite pi;
+    [SerializeField] private Sprite euler;
+    [SerializeField] private Sprite z;
+    [SerializeField] private Sprite y;
+    [SerializeField] private Sprite x;
+    
     #endregion
 
+    private Dictionary<int, Sprite> symbolsMap;
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
-    private int spinCoroutineCounter = 0;
+    private float elapsedCoroutineTime = 0;
     private Coroutine spinButtonPulse;
     
     private void Start()
     {
         if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText ||
-            !spinButtonImage || !balanceText || orderedReelTextObjects.Count < 12)
+            !spinButtonImage || !balanceText || orderedReelImageObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
+            return;
         }
+        
+        if (!sigma || !infinity || !theta || !pi || !euler || !z || !y || !x)
+        {
+            Debug.LogError($"UI sprites are null. Check the GameObject {this.name}!");
+            return;
+        }
+        
+        symbolsMap = new() 
+        {
+            {25, sigma},
+            {18, infinity},
+            {15, theta},
+            {12, pi},
+            {10, euler},
+            {8,  z},
+            {5,  y},
+            {3,  x}
+        };
         
         spinOutcomeText?.SetText(UIConstants.onHoldText);
         wagerText?.SetText($"{UIConstants.wagerText}00.00");
@@ -53,10 +84,10 @@ public class UIDisplayer : MonoBehaviour
         slotScreen.SetActive(toSlots);
     }
 
-    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen)
+    public void SetResult(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // start spin animation from current indexes up to result indexes
-        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen));
+        StartCoroutine(AnimateSlotSpin(resultNumbers, wagersQueueLen, soundSystem, timeDelta));
     }
 
     public void SetWager(float wager)
@@ -74,42 +105,62 @@ public class UIDisplayer : MonoBehaviour
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
     
-    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen)
+    private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
         SetSpinButtonInteractable(false);
-        spinCoroutineCounter = 0;
+        elapsedCoroutineTime = 0;
+        soundSystem.PlaySpinSound();
         
-        List<int> counterDivisors = SpinnerConstants.reelSpinsDivisors;
-        List<int> spinLimits = GameConstants.reelSpinsLimits;
+        float spinDuration = ComputeSpinTime(timeDelta);
+        List<float> counterDivisors = SpinnerConstants.GetReelSpinsDivisors(spinDuration);
+        List<float> spinLimits = SpinnerConstants.GetReelSpinsLimits(spinDuration);
+        List<bool> settledLanes = new () {false, false, false, false};
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
-        int spinFrames = GameConstants.spinFrames;
         int len = SpinnerConstants.reelLength;
         
-        // go through the 5 seconds of spin
-        while (spinCoroutineCounter < spinFrames)
+        // go through the X seconds of spin
+        while (elapsedCoroutineTime < spinDuration)
         {
             for (int i = 0; i < counterDivisors.Count; i++)
             {
-                if (spinCoroutineCounter % counterDivisors[i] != 0 && spinCoroutineCounter < spinLimits[i])
+                if (elapsedCoroutineTime % counterDivisors[i] != 0 && elapsedCoroutineTime < spinLimits[i])
                 {
                     // spin the corresponding reel
-                    SetReelTriplet(i + 1, (reelIndexes[i] + spinCoroutineCounter) % len);
+                    SetReelTriplet(i + 1, (reelIndexes[i] + (int)(elapsedCoroutineTime * 60)) % len);
                 } 
-                else if (spinCoroutineCounter == spinLimits[i])
+                else if (!settledLanes[i] && elapsedCoroutineTime >= spinLimits[i])
                 {
                     // settle down on the true values
                     SetReelTriplet(i + 1, resultIndices[i]);
+                    settledLanes[i] = true;  // avoid settling multiple times
                 }
             }
             
-            spinCoroutineCounter += 1;
+            elapsedCoroutineTime += Time.deltaTime;
             yield return null;
+        }
+        
+        // make sure lanes settle (sometimes depending on timing, that 4th reel could not settle)
+        for (int i = 0; i < settledLanes.Count; i++)
+        {
+            if (!settledLanes[i])
+            {
+                SetReelTriplet(i + 1, resultIndices[i]);
+            }
         }
         
         // clean up
         DisplayResultText(resultNumbers);
+        if (resultNumbers.rtp > 0)
+        {
+            soundSystem.PlayWinSound(resultNumbers.jackpotTriggered);
+        }
+        else
+        {
+            soundSystem.PlayLoseSound();
+        }
         SetBalance(resultNumbers.newBalance);
         reelIndexes[0] = resultNumbers.reel1Index;
         reelIndexes[1] = resultNumbers.reel2Index;
@@ -134,7 +185,7 @@ public class UIDisplayer : MonoBehaviour
         for (int i = -1; i <= 1; i++)
         {
             int symbol = currReel[(reelIndex + i + len) % len];
-            orderedReelTextObjects[ (reelNumber - 1) * 3 + row].text = SpinnerConstants.symbolsMap[symbol];
+            orderedReelImageObjects[ (reelNumber - 1) * 3 + row].sprite = symbolsMap[symbol];
             row += 1;  // update row # for UI
         }
     }
@@ -163,13 +214,13 @@ public class UIDisplayer : MonoBehaviour
     public void ResetToDefaults()
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
-        spinCoroutineCounter = 0; 
-        SetSpinToWinText();
+        elapsedCoroutineTime = 0; 
+        SetSpinOutcomeText(UIConstants.onHoldText);
     }
 
-    public void SetSpinToWinText()
+    public void SetSpinOutcomeText(string text)
     {
-        spinOutcomeText?.SetText(UIConstants.onHoldText);
+        spinOutcomeText?.SetText(text);
     }
 
     public void SetSpinButtonInteractable(bool interactable)
@@ -199,6 +250,20 @@ public class UIDisplayer : MonoBehaviour
         {
             spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
         }
+    }
+
+    private float ComputeSpinTime(float timeDelta)
+    {
+        const float lbLn = 3.219f;
+        const float ubLn = 5.704f;
+        
+        // time delta can be anything from 0s -> +inf, so we clamp between 25s and 300s to avoid absurd values
+        // I define the log of these values as constants here for efficiency sake
+        timeDelta = Mathf.Clamp(timeDelta, 25f, 300f);
+
+        // map input to outputs through log scaling, and then map that back between 5 and 10 seconds
+        float rate = (Mathf.Log(timeDelta) - lbLn) / (ubLn - lbLn);
+        return rate * 5f + 5f;
     }
 
     #region UI Animations

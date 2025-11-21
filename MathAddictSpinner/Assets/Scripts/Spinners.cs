@@ -17,7 +17,7 @@ public class Spinners : MonoBehaviour
     // reward system
     private float lastReward = -1f;
     private float currentReward = -1f;
-    private float currentJackpot = -GameConstants.startingJackpot;
+    private float currentJackpot = -RewardConstants.startingJackpot;
     private bool jackpotTriggered = false;
 
     // debug
@@ -39,10 +39,9 @@ public class Spinners : MonoBehaviour
         
         SpinResult spinResult = new SpinResult(GetRtp(wager), reel1Index, reel2Index, reel3Index, reel4Index, jackpotTriggered);
 
-        if (GameConstants.isDebugMode)
-        {
+        #if UNITY_EDITOR
             PrintMatrix(current3By4);
-        }
+        #endif
         
         return spinResult;
     }   
@@ -59,12 +58,32 @@ public class Spinners : MonoBehaviour
         
         // collect the values present in the 4x3
         Dictionary<int, int> currentSpinCounts = GetCurrent3By4Counts();
-        
+
+        int number2X = 0;
+        int number3X = 0;
         // check for counts
         foreach (KeyValuePair<int, int> symbolCount in currentSpinCounts)
         {
-            // if >= 3 in screen, add # of symbols * symbol value to total result
-            currentReward += symbolCount.Value >= 3 ? (symbolCount.Value * symbolCount.Key) : 0;
+            if (symbolCount.Value == 2) number2X++;
+            if (symbolCount.Value == 3) number3X++;
+            if (symbolCount.Value >= 5)
+            {
+                currentReward += symbolCount.Value * symbolCount.Key * RewardConstants.multiSymbolMultiplier;
+            }
+        }
+        
+        // check for 4 2X counts
+        if (number2X >= 4)
+        {
+            currentReward += number2X * RewardConstants.combo2Xwin;
+            currentReward *= RewardConstants.smallComboSymbolMultiplier;
+        }
+        
+        // check for 2 3X count and 2 2X
+        if (number2X >= 2 && number3X >= 2)
+        {
+            currentReward += number2X * number3X * RewardConstants.combo3x2xwin;
+            currentReward *= RewardConstants.midComboSymbolMultiplier;
         }
         
         // check for 4 in middle row
@@ -75,16 +94,16 @@ public class Spinners : MonoBehaviour
         {
             currentReward += (float)Math.Pow(toMatch, 3);
 
-            if (toMatch == GameConstants.jackpotSymbol)
+            if (toMatch == RewardConstants.jackpotSymbol)
             {
                 currentReward += currentJackpot;
                 jackpotTriggered = true;
-                currentJackpot = GameConstants.startingJackpot;  // reset
+                currentJackpot = RewardConstants.startingJackpot;  // reset
             }
             else
             {
                 // if no jackpot, add % of wager into Jackpot
-                currentJackpot += Random.Range(GameConstants.jackpotWagerMultLB, GameConstants.jackpotWagerMultUB) * wager;
+                currentJackpot += Random.Range(RewardConstants.jackpotWagerMultLB, RewardConstants.jackpotWagerMultUB) * wager;
             }
         }
 
@@ -96,7 +115,7 @@ public class Spinners : MonoBehaviour
     {
         // setup as 0s for everything
         Dictionary<int, int> currentSpinCounts = new Dictionary<int, int>();
-        foreach (int key in SpinnerConstants.symbolsMap.Keys)
+        foreach (int key in SpinnerConstants.symbolsMapKeys)
         {
             currentSpinCounts[key] = 0;
         }
