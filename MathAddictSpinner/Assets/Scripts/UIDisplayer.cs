@@ -19,7 +19,6 @@ public class UIDisplayer : MonoBehaviour
     
     // Reels
     [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
-    [SerializeField] private Button spinButton;
     [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
@@ -108,7 +107,7 @@ public class UIDisplayer : MonoBehaviour
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
-        SetSpinButtonInteractable(false);
+        SetSpinButtonText(GameConstants.spinningText);
         elapsedCoroutineTime = 0;
         soundSystem.PlaySpinSound();
         
@@ -167,8 +166,7 @@ public class UIDisplayer : MonoBehaviour
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
         
-        // depending on the wagers queue, the button could still be seen as interactable
-        SetSpinButtonInteractable(wagersQueueLen > 0);
+        SetSpinButtonText(GameConstants.awaitingText);
     }
     
     // sets the items for a reel triplet for a frame of the animation
@@ -223,19 +221,9 @@ public class UIDisplayer : MonoBehaviour
         spinOutcomeText?.SetText(text);
     }
 
-    public void SetSpinButtonInteractable(bool interactable)
+    public void SetSpinButtonText(string text)
     {
-        if (spinButton != null)
-        {
-            spinButton.interactable = interactable;
-            // set transparency of text based on interact-ability
-            Color spinButtonTextColor = spinButtonText.color;
-            spinButtonTextColor.a = interactable ? 1.0f : 0.0f;
-            spinButtonText.color = spinButtonTextColor;
-            
-            // show the user they can spin through an animation
-            ToggleSpinButtonAnimation(interactable);
-        }
+        spinButtonText.text = text;
     }
 
     private void ToggleSpinButtonAnimation(bool startAnimation)

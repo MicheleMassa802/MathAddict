@@ -52,6 +52,8 @@ public static class SpinnerConstants
 public static class GameConstants
 {
     public const bool isDebugMode = true;
+    public const string spinningText = "Spinning!";
+    public const string awaitingText = "Awaiting Wager!";
 }
 
 public static class RewardConstants

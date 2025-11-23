@@ -38,7 +38,7 @@ public class MAUnityManager : MonoBehaviour
         #if UNITY_EDITOR
         wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), 25f));
         #endif
-        uiManager.SetSpinButtonInteractable(wagers.Count > 0);
+        uiManager.SetSpinButtonText(GameConstants.awaitingText);  // no spin button changes
     }
     
     private void Start()
@@ -67,7 +67,7 @@ public class MAUnityManager : MonoBehaviour
         {
             // this shouldn't happen, but handle it by setting the text as if a wager isn't present
             Debug.LogError("Attempted to trigger spin without a wager available!");
-            uiManager.SetSpinButtonInteractable(false);
+            uiManager.SetSpinButtonText(GameConstants.awaitingText);
             return;
         }
         
@@ -140,12 +140,12 @@ public class MAUnityManager : MonoBehaviour
         float realWager = float.Parse(twoFloats[0]);
         float timeDelta = float.Parse(twoFloats[1]);
         
-        // by default we set the wager that then gets triggered by our spin!
+        // by default, we set the wager that then gets triggered by our spin!
         if (realWager > 0)
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
             uiManager.SetWager(realWager);
-            uiManager.SetSpinButtonInteractable(wagers.Count > 0);
+            OnSpinTriggered();  // get wager => trigger spin
         }
         else
         {
