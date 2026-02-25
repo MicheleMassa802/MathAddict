@@ -38,7 +38,6 @@ public class MAUnityManager : MonoBehaviour
         #if UNITY_EDITOR
         wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), 25f));
         #endif
-        uiManager.SetSpinButtonText(GameConstants.awaitingText);  // no spin button changes
     }
     
     private void Start()
@@ -67,12 +66,10 @@ public class MAUnityManager : MonoBehaviour
         {
             // this shouldn't happen, but handle it by setting the text as if a wager isn't present
             Debug.LogError("Attempted to trigger spin without a wager available!");
-            uiManager.SetSpinButtonText(GameConstants.awaitingText);
             return;
         }
         
         uiManager.SetWager(currWager);
-        uiManager.SetSpinOutcomeText(UIConstants.onHoldText);
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currWager);
@@ -150,7 +147,6 @@ public class MAUnityManager : MonoBehaviour
         else
         {
             // didn't get a wager :( => throw result on screen + sound!
-            uiManager.SetSpinOutcomeText(UIConstants.noWagerReceivedText);
             soundManager.PlayTryAgainSound();
         }
         

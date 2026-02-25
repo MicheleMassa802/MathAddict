@@ -19,13 +19,10 @@ public class UIDisplayer : MonoBehaviour
     
     // Reels
     [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
-    [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
-    [SerializeField] private TextMeshProUGUI spinButtonText; 
-    [SerializeField] private TextMeshProUGUI wagerText;
-    [SerializeField] private TextMeshProUGUI spinOutcomeText;
-    [SerializeField] private TextMeshProUGUI lastWinText;
+    [SerializeField] private TextMeshProUGUI betText;
+    [SerializeField] private TextMeshProUGUI winText;
     [SerializeField] private TextMeshProUGUI balanceText;
     
     // Spinner Sprites
@@ -47,8 +44,8 @@ public class UIDisplayer : MonoBehaviour
     
     private void Start()
     {
-        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText ||
-            !spinButtonImage || !balanceText || orderedReelImageObjects.Count < 12)
+        if (!startScreen || !slotScreen || !betText || !winText || !balanceText 
+            || orderedReelImageObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
             return;
@@ -72,9 +69,8 @@ public class UIDisplayer : MonoBehaviour
             {3,  x}
         };
         
-        spinOutcomeText?.SetText(UIConstants.onHoldText);
-        wagerText?.SetText($"{UIConstants.wagerText}00.00");
-        lastWinText?.SetText($"{UIConstants.lastWinText}00.00");
+        betText?.SetText("00.00");
+        winText?.SetText("00.00");
     }
 
     public void SwitchScreens(bool toSlots)
@@ -91,12 +87,12 @@ public class UIDisplayer : MonoBehaviour
 
     public void SetWager(float wager)
     {
-        wagerText?.SetText($"{UIConstants.wagerText}{Math.Truncate(100 * wager) / 100}");
+        betText?.SetText($"{Math.Truncate(100 * wager) / 100}");
     }
     
     public void SetLastWin(float lastWin)
     {
-        lastWinText?.SetText($"{UIConstants.lastWinText}{Math.Truncate(100 * lastWin) / 100}");
+        winText?.SetText($"{Math.Truncate(100 * lastWin) / 100}");
     }
 
     public void SetBalance(float balance)
@@ -107,7 +103,6 @@ public class UIDisplayer : MonoBehaviour
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
-        SetSpinButtonText(GameConstants.spinningText);
         elapsedCoroutineTime = 0;
         soundSystem.PlaySpinSound();
         
@@ -165,8 +160,6 @@ public class UIDisplayer : MonoBehaviour
         reelIndexes[1] = resultNumbers.reel2Index;
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
-        
-        SetSpinButtonText(GameConstants.awaitingText);
     }
     
     // sets the items for a reel triplet for a frame of the animation
@@ -205,7 +198,7 @@ public class UIDisplayer : MonoBehaviour
         {
             resultString += $"{UIConstants.lossText}";
         }
-        spinOutcomeText?.SetText(resultString); 
+        // TODO MICHELE: SET OFF ACTIVATION LIGHTS FOR COMBOS FROM HERE
         SetLastWin(resultNumbers.rtp);
     }
 
@@ -213,32 +206,22 @@ public class UIDisplayer : MonoBehaviour
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
         elapsedCoroutineTime = 0; 
-        SetSpinOutcomeText(UIConstants.onHoldText);
     }
 
-    public void SetSpinOutcomeText(string text)
-    {
-        spinOutcomeText?.SetText(text);
-    }
-
-    public void SetSpinButtonText(string text)
-    {
-        spinButtonText.text = text;
-    }
-
-    private void ToggleSpinButtonAnimation(bool startAnimation)
-    {
-        if (spinButtonPulse != null && !startAnimation)
-        {
-            StopCoroutine(spinButtonPulse);
-            spinButtonPulse = null;
-            spinButtonImage.color = new Color32(200, 200, 200, 155);
-        }
-        else if (spinButtonPulse == null &&  startAnimation)
-        {
-            spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
-        }
-    }
+    // TODO MICHELE: recycle this to pulse the full screen when they can tap the reels to spin
+    // private void ToggleSpinButtonAnimation(bool startAnimation)
+    // {
+    //     if (spinButtonPulse != null && !startAnimation)
+    //     {
+    //         StopCoroutine(spinButtonPulse);
+    //         spinButtonPulse = null;
+    //         spinButtonImage.color = new Color32(200, 200, 200, 155);
+    //     }
+    //     else if (spinButtonPulse == null &&  startAnimation)
+    //     {
+    //         spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
+    //     }
+    // }
 
     private float ComputeSpinTime(float timeDelta)
     {
@@ -246,7 +229,7 @@ public class UIDisplayer : MonoBehaviour
         const float ubLn = 5.704f;
         
         // time delta can be anything from 0s -> +inf, so we clamp between 25s and 300s to avoid absurd values
-        // I define the log of these values as constants here for efficiency sake
+        // I define the log of these values as constants here for efficiency's sake
         timeDelta = Mathf.Clamp(timeDelta, 25f, 300f);
 
         // map input to outputs through log scaling, and then map that back between 5 and 10 seconds
