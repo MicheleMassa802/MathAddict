@@ -86,6 +86,9 @@ public static class UIConstants
     public const string lastWinText = "Last Win:\n $";
     #endregion
 
+    #region Animations
+    public static readonly List<float> spinIndicatorFlashLength = new() { 2f, 3f, 3.5f };
+    #endregion
 }
 
 

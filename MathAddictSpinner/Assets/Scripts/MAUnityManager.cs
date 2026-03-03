@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
-using System.Runtime.InteropServices;
 
 /*
  * Puts everything together, managing spins and UI and marrying them together into a not very happy couple,
@@ -50,6 +49,7 @@ public class MAUnityManager : MonoBehaviour
 
     public void OnSpinTriggered()
     {
+        uiManager.FlashSpinFlowIndicator(1);  // TODO MICHELE: place these correctly across
         float currWager;
         float currTimeDelta;
         
@@ -142,7 +142,7 @@ public class MAUnityManager : MonoBehaviour
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
             uiManager.SetWager(realWager);
-            OnSpinTriggered();  // get wager => trigger spin
+            // OnSpinTriggered();  // get wager => trigger spin
         }
         else
         {
