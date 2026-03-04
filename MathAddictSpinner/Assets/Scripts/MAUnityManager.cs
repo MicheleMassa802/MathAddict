@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -22,6 +23,8 @@ public class MAUnityManager : MonoBehaviour
     
     // stored by the game manager for ease of access by other objects
     public List<List<int>> reels;  // 1 through 4
+    
+    private IEnumerator spinCoroutine;
 
     private void Awake()
     {
@@ -49,7 +52,6 @@ public class MAUnityManager : MonoBehaviour
 
     public void OnSpinTriggered()
     {
-        uiManager.FlashSpinFlowIndicator(1);  // TODO MICHELE: place these correctly across
         float currWager;
         float currTimeDelta;
         
@@ -128,28 +130,55 @@ public class MAUnityManager : MonoBehaviour
         // this method is called by JS when a question is completed, which then allows the player to spin
         // using the wagers they've accumulated in the wager queue
         Debug.Log($"Received Wager:Time: {jsWagerAndTime}");
+        
         string[] twoFloats = jsWagerAndTime.Split(':');
         if (twoFloats.Length != 2)
         {
             Debug.LogError($"Array sent by JS for wager setting is of len != 2: {twoFloats.Length}");
             return;
         }
-        float realWager = float.Parse(twoFloats[0]);
-        float timeDelta = float.Parse(twoFloats[1]);
+
+        StartCoroutine(TriggerSpinFlow(float.Parse(twoFloats[0]), float.Parse(twoFloats[1])));
+    }
+
+    private IEnumerator TriggerSpinFlow(float realWager, float timeDelta)
+    {
+        if (spinCoroutine != null)
+        {
+            yield return spinCoroutine;
+        }
+        
+        spinCoroutine = SpinFLowInternal(realWager, timeDelta);
+        yield return spinCoroutine;
+        spinCoroutine = null;
+    }
+
+    private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
+    {
+        uiManager.FlashSpinFlowIndicator(0, true);
+        yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
         
         // by default, we set the wager that then gets triggered by our spin!
         if (realWager > 0)
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
+            
+            uiManager.FlashSpinFlowIndicator(1, true);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+            
             uiManager.SetWager(realWager);
-            // OnSpinTriggered();  // get wager => trigger spin
+            
+            OnSpinTriggered();
         }
         else
         {
             // didn't get a wager :( => throw result on screen + sound!
+            uiManager.FlashSpinFlowIndicator(1, false);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+
             soundManager.PlayTryAgainSound();
+            uiManager.CleanUpSpinFlowIndicators();
         }
-        
     }
     
     public void SetBalance(string jsBalance)

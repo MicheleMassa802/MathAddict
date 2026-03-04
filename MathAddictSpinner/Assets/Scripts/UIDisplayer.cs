@@ -46,7 +46,6 @@ public class UIDisplayer : MonoBehaviour
     private List<int> reelIndexes = new List<int>{ 1, 1, 1, 1};  // start at 1
     private float elapsedCoroutineTime = 0;
     private Coroutine spinButtonPulse;
-    private Coroutine spinAvailableFlash;
     
     private void Start()
     {
@@ -119,6 +118,9 @@ public class UIDisplayer : MonoBehaviour
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
         int len = SpinnerConstants.reelLength;
+        
+        // set off flash indicator
+        FlashSpinFlowIndicator(2, resultNumbers.rtp > 0, spinDuration);
         
         // go through the X seconds of spin
         while (elapsedCoroutineTime < spinDuration)
@@ -208,25 +210,18 @@ public class UIDisplayer : MonoBehaviour
         SetLastWin(resultNumbers.rtp);
     }
 
-    public void FlashSpinFlowIndicator(int index)
+    public void FlashSpinFlowIndicator(int index, bool setIndicatorActive, float flashDurationOverride = -1.0f)
     {
-        if (index == 1)
+        float flashDuration = flashDurationOverride < 0 ? UIConstants.spinIndicatorFlashLength[index] : flashDurationOverride;
+        StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], flashDuration , setIndicatorActive));
+    }
+
+    public void CleanUpSpinFlowIndicators()
+    {
+        foreach (var indicator in spinFlowIndicators)
         {
-            if (spinAvailableFlash != null)
-            {
-                // player has triggered spin manually!
-                StopCoroutine(spinAvailableFlash);
-                spinAvailableFlash = null;
-            }
-            else
-            {
-                // need to flash indefinitely until player triggers spin
-                spinAvailableFlash = StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], UIConstants.spinIndicatorFlashLength[index], true));
-                return;
-            }
+            indicator.SetActive(false);
         }
- 
-        StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], UIConstants.spinIndicatorFlashLength[index]));
     }
 
     public void ResetToDefaults()
@@ -299,21 +294,20 @@ public class UIDisplayer : MonoBehaviour
     }
 
     // toggle the gameObject on and off to make it flash
-    private IEnumerator AnimateSpinFlowIndicators(GameObject indicator, float timeDelta, bool spinIndefinitely = false)
+    private IEnumerator AnimateSpinFlowIndicators(GameObject indicator, float timeDelta, bool setIndicatorActive)
     {
         float timeElapsed = 0.0f;
         float flashDelay;
-        
+
         while (timeElapsed < timeDelta)
         {
             indicator.SetActive(!indicator.activeSelf);
-            flashDelay = spinIndefinitely ? 0.2f : Mathf.Lerp(0.1f, 0.25f, timeElapsed / timeDelta);
+            flashDelay = Mathf.Lerp(0.1f, 0.25f, timeElapsed / timeDelta);
             yield return new WaitForSeconds(flashDelay);
             
-            timeElapsed += Time.deltaTime;
+            timeElapsed += flashDelay;
         }
-        
-        indicator.SetActive(true);
+        indicator.SetActive(setIndicatorActive);
     }
     #endregion
 }
