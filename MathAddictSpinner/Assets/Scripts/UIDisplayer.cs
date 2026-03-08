@@ -309,5 +309,10 @@ public class UIDisplayer : MonoBehaviour
         }
         indicator.SetActive(setIndicatorActive);
     }
+
+    private IEnumerator AnimateComboIndicators(List<Graphic> comboIndicators )
+    {
+        yield return null;
+    }
     #endregion
 }
