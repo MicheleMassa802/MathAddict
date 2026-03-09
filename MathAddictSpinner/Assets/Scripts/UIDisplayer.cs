@@ -25,10 +25,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI winText;
     [SerializeField] private TextMeshProUGUI balanceText;
     [SerializeField] private List<GameObject> spinFlowIndicators;  // correct answer, spin available, spin winner
-    [SerializeField] private GameObject jackpotComboIndicator;
-    [SerializeField] private GameObject multiply25ComboIndicator;
-    [SerializeField] private GameObject multiply10ComboIndicator;
-
+    [SerializeField] private List<Image> filledComboIndicators;  // jackpot, 25x, 10x
     
     // Spinner Sprites
     [SerializeField] private Sprite sigma;
@@ -108,6 +105,7 @@ public class UIDisplayer : MonoBehaviour
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
+        ResetComboIndicators();
         elapsedCoroutineTime = 0;
         soundSystem.PlaySpinSound();
         
@@ -137,6 +135,8 @@ public class UIDisplayer : MonoBehaviour
                     // settle down on the true values
                     SetReelTriplet(i + 1, resultIndices[i]);
                     settledLanes[i] = true;  // avoid settling multiple times
+                    // update comboIndicators
+                    UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i]);
                 }
             }
             
@@ -150,6 +150,7 @@ public class UIDisplayer : MonoBehaviour
             if (!settledLanes[i])
             {
                 SetReelTriplet(i + 1, resultIndices[i]);
+                UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i]);
             }
         }
         
@@ -169,7 +170,7 @@ public class UIDisplayer : MonoBehaviour
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
     }
-    
+
     // sets the items for a reel triplet for a frame of the animation
     private void SetReelTriplet(int reelNumber, int reelIndex)
     {
@@ -186,6 +187,31 @@ public class UIDisplayer : MonoBehaviour
             int symbol = currReel[(reelIndex + i + len) % len];
             orderedReelImageObjects[ (reelNumber - 1) * 3 + row].sprite = symbolsMap[symbol];
             row += 1;  // update row # for UI
+        }
+    }
+
+    private void UpdateComboIndicators(List<int> resultNumbersComboProgress)
+    {
+        int doubles = resultNumbersComboProgress[0];
+        int triples = resultNumbersComboProgress[1];
+        SetComboIndicatorFill(0, Mathf.Clamp(resultNumbersComboProgress[0]/4.0f, 0.0f, 1.0f));
+        SetComboIndicatorFill(1, Mathf.Clamp(
+            Mathf.Clamp(doubles/2.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/2.0f, 0.0f, 1.0f),
+            0.0f, 1.0f));
+        SetComboIndicatorFill(2, Mathf.Clamp(doubles/4.0f, 0.0f, 1.0f));
+
+    }
+    
+    private void SetComboIndicatorFill(int indicatorIndex, float progress)
+    {
+        filledComboIndicators[indicatorIndex].fillAmount = progress;
+    }
+
+    private void ResetComboIndicators()
+    {
+        foreach (var indicator in filledComboIndicators)
+        {
+            indicator.fillAmount = 0f;
         }
     }
 
