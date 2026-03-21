@@ -51,7 +51,7 @@ public class Spinners : MonoBehaviour
         float win = GetRtp(wager);
         SpinResult spinResult = new SpinResult(win, reel1Index, reel2Index,
             reel3Index, reel4Index, jackpotTriggered, comboProgressAtReelResolveX);
-
+        
         #if UNITY_EDITOR
             PrintMatrix(current3By4);
         #endif
@@ -142,42 +142,27 @@ public class Spinners : MonoBehaviour
         int number3X = 0;
         foreach (KeyValuePair<int, int> symbolCount in currentSpinCounts)
         {
-            if (symbolCount.Value == 2) number2X++;
-            if (symbolCount.Value == 3) number3X++;
+            if (symbolCount.Value >= 2) number2X++;
+            if (symbolCount.Value >= 3) number3X++;
         }
         
         // check for 4 in middle row
         Dictionary<int, int> middleRowCount = new Dictionary<int, int>();
         middleRowCount[MAUnityManager.Instance.reels[0][reel1Index]] = 1;
-        switch (reelsChecked)
+        for (int r = 1; r < reelsChecked; r++)
         {
-            case 2:
+            int index = r switch
             {
-                int key = MAUnityManager.Instance.reels[1][reel2Index];
+                1 => reel2Index,
+                2 => reel3Index,
+                3 => reel4Index,
+                _ => 0
+            };
 
-                middleRowCount[key] = middleRowCount.TryGetValue(key, out int count)
-                    ? count + 1
-                    : 1;
-                break;
-            }
-            
-            case 3:
-            {
-                int key = MAUnityManager.Instance.reels[2][reel3Index];
-                middleRowCount[key] = middleRowCount.TryGetValue(key, out int count)
-                    ? count + 1
-                    : 1;
-                break;
-            }
-            
-            case 4:
-            {
-                int key = MAUnityManager.Instance.reels[3][reel4Index];
-                middleRowCount[key] = middleRowCount.TryGetValue(key, out int count)
-                    ? count + 1
-                    : 1;
-                break;
-            }
+            int key = MAUnityManager.Instance.reels[r][index];
+            middleRowCount[key] = middleRowCount.TryGetValue(key, out int count)
+                ? count + 1
+                : 1;
         }
 
         int maxEquals = 1;
@@ -188,7 +173,6 @@ public class Spinners : MonoBehaviour
                 maxEquals = numberOfEqualsInMiddleRow.Value;
             }
         }
-        
         return new List<int>{maxEquals, number2X, number3X};
     }
         

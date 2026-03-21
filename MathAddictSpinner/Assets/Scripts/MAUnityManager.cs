@@ -155,6 +155,7 @@ public class MAUnityManager : MonoBehaviour
 
     private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
     {
+        uiManager.SetTimeToAnswer((int)timeDelta);
         uiManager.FlashSpinFlowIndicator(0, true);
         yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
         

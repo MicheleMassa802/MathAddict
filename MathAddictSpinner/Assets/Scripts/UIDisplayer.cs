@@ -24,6 +24,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI betText;
     [SerializeField] private TextMeshProUGUI winText;
     [SerializeField] private TextMeshProUGUI balanceText;
+    [SerializeField] private TextMeshProUGUI timeText;
     [SerializeField] private List<GameObject> spinFlowIndicators;  // correct answer, spin available, spin winner
     [SerializeField] private List<Image> filledComboIndicators;  // jackpot, 25x, 10x
     
@@ -100,6 +101,14 @@ public class UIDisplayer : MonoBehaviour
     public void SetBalance(float balance)
     {
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
+    }
+
+    public void SetTimeToAnswer(int seconds)
+    {
+        int minutes = seconds / 60;
+        seconds %= 60;
+        string minutesString = minutes < 10 ? "0" + minutes : minutes.ToString();
+        timeText?.SetText($"{minutesString}:{seconds}");
     }
     
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
@@ -192,13 +201,14 @@ public class UIDisplayer : MonoBehaviour
 
     private void UpdateComboIndicators(List<int> resultNumbersComboProgress)
     {
-        int doubles = resultNumbersComboProgress[0];
-        int triples = resultNumbersComboProgress[1];
+        int triples = resultNumbersComboProgress[2];
+        int uniqueDoubles = resultNumbersComboProgress[1] - triples;
+        int tripleDoubles = (uniqueDoubles > 2) ? 2 : uniqueDoubles;
         SetComboIndicatorFill(0, Mathf.Clamp(resultNumbersComboProgress[0]/4.0f, 0.0f, 1.0f));
         SetComboIndicatorFill(1, Mathf.Clamp(
-            Mathf.Clamp(doubles/2.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/2.0f, 0.0f, 1.0f),
+            Mathf.Clamp(tripleDoubles/4.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/4.0f, 0.0f, 1.0f),
             0.0f, 1.0f));
-        SetComboIndicatorFill(2, Mathf.Clamp(doubles/4.0f, 0.0f, 1.0f));
+        SetComboIndicatorFill(2, Mathf.Clamp(uniqueDoubles/4.0f, 0.0f, 1.0f));
 
     }
     
