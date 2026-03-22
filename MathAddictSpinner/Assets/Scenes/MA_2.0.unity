@@ -1388,11 +1388,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sfxSource: {fileID: 344774327}
   bgmSource: {fileID: 344774326}
-  clickSpinSound: {fileID: 8300000, guid: efda2d53acd4c554ea4785d4c4133750, type: 3}
-  winSound: {fileID: 8300000, guid: e0c1f98ad1d9aab4b924cadac7570670, type: 3}
-  loseSound: {fileID: 8300000, guid: 2735b51531c6ba843803a76d744ea880, type: 3}
-  tryAgainSound: {fileID: 0}
-  backgroundMusic: {fileID: 8300000, guid: 3a394620160f94c48bccf755af816873, type: 3}
+  spinSound: {fileID: 8300000, guid: 28b50e3c96c007346b1304e121d75596, type: 3}
+  bigWinSound: {fileID: 8300000, guid: 2243e448ce84a654a984d043bd81eeeb, type: 3}
+  smallWinSound: {fileID: 8300000, guid: 3a3c6ab33364b8d44963e866e00b55f0, type: 3}
+  bigLoseSound: {fileID: 8300000, guid: 7dc0cfa0251508a4ca4b3cf8deafcd38, type: 3}
+  smallLoseSound: {fileID: 8300000, guid: 975d9fe88a253e54ab5dea5efb5a08ef, type: 3}
+  comboHitSound: {fileID: 8300000, guid: 4a751be3bf528e541b1598e6a7c50902, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 68aa3f164dc4f24448b0b49d61ede0cc, type: 3}
   audioButtonImage: {fileID: 526908520}
   audioOn: {fileID: 21300000, guid: 40c539bb46084e142b93e21ea80c68f8, type: 3}
   audioOff: {fileID: 21300000, guid: 479ce84ea8730da439df412506f4bda5, type: 3}

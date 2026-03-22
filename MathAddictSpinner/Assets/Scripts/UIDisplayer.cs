@@ -128,7 +128,7 @@ public class UIDisplayer : MonoBehaviour
         int len = SpinnerConstants.reelLength;
         
         // set off flash indicator
-        FlashSpinFlowIndicator(2, resultNumbers.rtp > 0, spinDuration);
+        FlashSpinFlowIndicator(2, resultNumbers.rtp > 0, soundSystem, spinDuration);
         
         // go through the X seconds of spin
         while (elapsedCoroutineTime < spinDuration)
@@ -146,7 +146,7 @@ public class UIDisplayer : MonoBehaviour
                     SetReelTriplet(i + 1, resultIndices[i]);
                     settledLanes[i] = true;  // avoid settling multiple times
                     // update comboIndicators
-                    UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i]);
+                    UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i], soundSystem);
                 }
             }
             
@@ -160,7 +160,7 @@ public class UIDisplayer : MonoBehaviour
             if (!settledLanes[i])
             {
                 SetReelTriplet(i + 1, resultIndices[i]);
-                UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i]);
+                UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i], soundSystem);
             }
         }
         
@@ -168,12 +168,12 @@ public class UIDisplayer : MonoBehaviour
         DisplayResultText(resultNumbers);
         if (resultNumbers.rtp > 0)
         {
-            soundSystem.PlayWinSound(resultNumbers.jackpotTriggered);
+            soundSystem.PlayBigWinSound(resultNumbers.jackpotTriggered);
             winPopupManager.TriggerWinPopup();
         }
         else
         {
-            soundSystem.PlayLoseSound();
+            soundSystem.PlayBigLoseSound();
         }
         SetBalance(resultNumbers.newBalance);
         reelIndexes[0] = resultNumbers.reel1Index;
@@ -201,21 +201,24 @@ public class UIDisplayer : MonoBehaviour
         }
     }
 
-    private void UpdateComboIndicators(List<int> resultNumbersComboProgress)
+    private void UpdateComboIndicators(List<int> resultNumbersComboProgress, SoundSystem soundSystem)
     {
         int triples = resultNumbersComboProgress[2];
         int uniqueDoubles = resultNumbersComboProgress[1] - triples;
         int tripleDoubles = (uniqueDoubles > 2) ? 2 : uniqueDoubles;
-        SetComboIndicatorFill(0, Mathf.Clamp(resultNumbersComboProgress[0]/4.0f, 0.0f, 1.0f));
+        SetComboIndicatorFill(0, Mathf.Clamp(resultNumbersComboProgress[0]/4.0f, 0.0f, 1.0f), soundSystem);
         SetComboIndicatorFill(1, Mathf.Clamp(
             Mathf.Clamp(tripleDoubles/4.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/4.0f, 0.0f, 1.0f),
-            0.0f, 1.0f));
-        SetComboIndicatorFill(2, Mathf.Clamp(resultNumbersComboProgress[1]/4.0f, 0.0f, 1.0f));
-
+            0.0f, 1.0f), soundSystem);
+        SetComboIndicatorFill(2, Mathf.Clamp(resultNumbersComboProgress[1]/4.0f, 0.0f, 1.0f), soundSystem);
     }
     
-    private void SetComboIndicatorFill(int indicatorIndex, float progress)
+    private void SetComboIndicatorFill(int indicatorIndex, float progress, SoundSystem soundSystem)
     {
+        if (!Mathf.Approximately(filledComboIndicators[indicatorIndex].fillAmount, 1.0f) && Mathf.Approximately(progress, 1.0f))
+        {
+            soundSystem.PlayComboHitSound();
+        }
         filledComboIndicators[indicatorIndex].fillAmount = progress;
     }
 
@@ -248,10 +251,10 @@ public class UIDisplayer : MonoBehaviour
         SetLastWin(resultNumbers.rtp);
     }
 
-    public void FlashSpinFlowIndicator(int index, bool setIndicatorActive, float flashDurationOverride = -1.0f)
+    public void FlashSpinFlowIndicator(int index, bool setIndicatorActive, SoundSystem soundSystem, float flashDurationOverride = -1.0f)
     {
         float flashDuration = flashDurationOverride < 0 ? UIConstants.spinIndicatorFlashLength[index] : flashDurationOverride;
-        StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], flashDuration , setIndicatorActive));
+        StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], flashDuration , setIndicatorActive, soundSystem));
     }
 
     public void CleanUpSpinFlowIndicators()
@@ -317,7 +320,7 @@ public class UIDisplayer : MonoBehaviour
     }
 
     // toggle the gameObject on and off to make it flash
-    private IEnumerator AnimateSpinFlowIndicators(GameObject indicator, float timeDelta, bool setIndicatorActive)
+    private IEnumerator AnimateSpinFlowIndicators(GameObject indicator, float timeDelta, bool setIndicatorActive, SoundSystem soundSystem)
     {
         float timeElapsed = 0.0f;
         float flashDelay;
@@ -330,7 +333,18 @@ public class UIDisplayer : MonoBehaviour
             
             timeElapsed += flashDelay;
         }
+
         indicator.SetActive(setIndicatorActive);
+        if (setIndicatorActive)
+        {
+            soundSystem.PlaySmallWinSound();
+        }
+        else
+        {
+            soundSystem.PlaySmallLoseSound();
+        }
+        
+        
     }
 
     private IEnumerator AnimateComboIndicators(List<Graphic> comboIndicators )

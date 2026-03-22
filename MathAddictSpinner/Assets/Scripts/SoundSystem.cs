@@ -11,10 +11,13 @@ public class SoundSystem : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
     [SerializeField] private AudioSource bgmSource;
 
-    [SerializeField] private AudioClip clickSpinSound;
-    [SerializeField] private AudioClip winSound;
-    [SerializeField] private AudioClip loseSound;
-    [SerializeField] private AudioClip tryAgainSound;
+    [SerializeField] private AudioClip spinSound;
+    [SerializeField] private AudioClip bigWinSound;
+    [SerializeField] private AudioClip smallWinSound;
+    [SerializeField] private AudioClip bigLoseSound;
+    [SerializeField] private AudioClip smallLoseSound;
+
+    [SerializeField] private AudioClip comboHitSound;
     [SerializeField] private AudioClip backgroundMusic;
     #endregion
     
@@ -38,11 +41,6 @@ public class SoundSystem : MonoBehaviour
 
     private void Start()
     {
-        if (!sfxSource || !bgmSource || !clickSpinSound || !winSound || !loseSound || !backgroundMusic)
-        {
-            Debug.LogError($"Sound properties are null. Check the GameObject {this.name}!");
-        }
-
         if (!audioButtonImage || !audioOn || !audioOff)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
@@ -55,11 +53,12 @@ public class SoundSystem : MonoBehaviour
 
     private IEnumerator PlaySfxCoroutine(AudioClip audioClip, float clipVolume) {
         // lower bgm volume, play then resume
-        bgmSource.volume = MusicSecondaryVolume;
+        // bgmSource.volume = MusicSecondaryVolume;
         sfxSource.volume = clipVolume;
         sfxSource.PlayOneShot(audioClip);
-        yield return new WaitForSeconds(audioClip.length);
-        bgmSource.volume = MusicVolume;
+        yield return null;
+        // yield return new WaitForSeconds(audioClip.length);
+        // bgmSource.volume = MusicVolume;
     }
 
     private void PlaySfx(AudioClip audioClip, float clipVolume)
@@ -95,22 +94,32 @@ public class SoundSystem : MonoBehaviour
     #region SFX interface for MAUnityManager
     public void PlaySpinSound()
     {
-        PlaySfx(clickSpinSound, SpinVolume);
+        PlaySfx(spinSound, SpinVolume);
     }
 
-    public void PlayWinSound(bool jackpot)
+    public void PlayBigWinSound(bool jackpot)
     {
-        PlaySfx(winSound, jackpot ? JackpotVolume : WinVolume);
-    }
-
-    public void PlayLoseSound()
-    {
-        PlaySfx(loseSound, LoseVolume);
+        PlaySfx(bigWinSound, jackpot ? JackpotVolume : WinVolume);
     }
     
-    public void PlayTryAgainSound()
+    public void PlaySmallWinSound()
     {
-        PlaySfx(tryAgainSound, TryAgainVolume);
+        PlaySfx(smallWinSound, WinVolume);
+    }
+
+    public void PlayBigLoseSound()
+    {
+        PlaySfx(bigLoseSound, LoseVolume);
+    }
+    
+    public void PlaySmallLoseSound()
+    {
+        PlaySfx(smallLoseSound, LoseVolume);
+    }
+    
+    public void PlayComboHitSound()
+    {
+        PlaySfx(comboHitSound, SpinVolume);
     }
     #endregion
     

@@ -156,7 +156,7 @@ public class MAUnityManager : MonoBehaviour
     private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
     {
         uiManager.SetTimeToAnswer((int)timeDelta);
-        uiManager.FlashSpinFlowIndicator(0, true);
+        uiManager.FlashSpinFlowIndicator(0, true, soundManager);
         yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
         
         // by default, we set the wager that then gets triggered by our spin!
@@ -164,20 +164,19 @@ public class MAUnityManager : MonoBehaviour
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
             
-            uiManager.FlashSpinFlowIndicator(1, true);
+            uiManager.FlashSpinFlowIndicator(1, true, soundManager);
             yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
             
             uiManager.SetWager(realWager);
-            
             OnSpinTriggered();
         }
         else
         {
             // didn't get a wager :( => throw result on screen + sound!
-            uiManager.FlashSpinFlowIndicator(1, false);
+            uiManager.FlashSpinFlowIndicator(1, false, soundManager);
             yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
 
-            soundManager.PlayTryAgainSound();
+            soundManager.PlaySmallLoseSound();
             uiManager.CleanUpSpinFlowIndicators();
         }
     }

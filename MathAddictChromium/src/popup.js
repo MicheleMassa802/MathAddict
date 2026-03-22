@@ -81,5 +81,5 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
 document.getElementById(removeElement).addEventListener("click", handleRemoveDivClick);
-document.getElementById(secretElement).addEventListener("click", handleSecretDivClick);
+// document.getElementById(secretElement).addEventListener("click", handleSecretDivClick);
 // appendDiv & removeDiv are the button element id

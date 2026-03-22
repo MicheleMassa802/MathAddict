@@ -37,7 +37,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         border.style.width = "405px";
         border.style.height = "716px";
         border.style.padding = "10px";
-        border.style.backgroundColor = "#A46928";
+        border.style.backgroundColor = "#b9b8d7";
         border.style.border = "none";
         div.appendChild(border);
         const iframe = document.createElement("iframe");
