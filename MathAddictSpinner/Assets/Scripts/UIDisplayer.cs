@@ -38,6 +38,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private Sprite y;
     [SerializeField] private Sprite x;
     
+    public WinPopup winPopupManager;
     #endregion
 
     private Dictionary<int, Sprite> symbolsMap;
@@ -168,6 +169,7 @@ public class UIDisplayer : MonoBehaviour
         if (resultNumbers.rtp > 0)
         {
             soundSystem.PlayWinSound(resultNumbers.jackpotTriggered);
+            winPopupManager.TriggerWinPopup();
         }
         else
         {
@@ -208,7 +210,7 @@ public class UIDisplayer : MonoBehaviour
         SetComboIndicatorFill(1, Mathf.Clamp(
             Mathf.Clamp(tripleDoubles/4.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/4.0f, 0.0f, 1.0f),
             0.0f, 1.0f));
-        SetComboIndicatorFill(2, Mathf.Clamp(uniqueDoubles/4.0f, 0.0f, 1.0f));
+        SetComboIndicatorFill(2, Mathf.Clamp(resultNumbersComboProgress[1]/4.0f, 0.0f, 1.0f));
 
     }
     
@@ -265,21 +267,6 @@ public class UIDisplayer : MonoBehaviour
         reelIndexes = new List<int>{ 1, 1, 1, 1};
         elapsedCoroutineTime = 0; 
     }
-
-    // TODO MICHELE: recycle this to pulse the full screen when they can tap the reels to spin
-    // private void ToggleSpinButtonAnimation(bool startAnimation)
-    // {
-    //     if (spinButtonPulse != null && !startAnimation)
-    //     {
-    //         StopCoroutine(spinButtonPulse);
-    //         spinButtonPulse = null;
-    //         spinButtonImage.color = new Color32(200, 200, 200, 155);
-    //     }
-    //     else if (spinButtonPulse == null &&  startAnimation)
-    //     {
-    //         spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
-    //     }
-    // }
 
     private float ComputeSpinTime(float timeDelta)
     {

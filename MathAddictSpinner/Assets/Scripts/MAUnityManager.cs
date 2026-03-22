@@ -24,7 +24,6 @@ public class MAUnityManager : MonoBehaviour
     
     // stored by the game manager for ease of access by other objects
     public List<List<int>> reels;  // 1 through 4
-    
     private IEnumerator spinCoroutine;
 
     private void Awake()
