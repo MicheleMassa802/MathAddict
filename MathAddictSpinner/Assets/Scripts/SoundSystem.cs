@@ -27,8 +27,8 @@ public class SoundSystem : MonoBehaviour
     [SerializeField] private Sprite audioOff;
     #endregion
     
-    private const float WinVolume = 0.6f;
-    private const float JackpotVolume = 0.9f;
+    private const float WinVolume = 0.8f;
+    private const float JackpotVolume = 1f;
     private const float LoseVolume = 1f;
     private const float TryAgainVolume = 0.5f;
     private const float SpinVolume = 0.7f;

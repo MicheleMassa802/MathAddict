@@ -55,9 +55,9 @@ public class MAUnityManager : MonoBehaviour
         float currWager;
         float currTimeDelta;
         
-        #if UNITY_EDITOR
-        wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), Random.Range(25f, 300f)));
-        #endif
+        // #if UNITY_EDITOR
+        // wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), Random.Range(25f, 300f)));
+        // #endif
         
         if (wagers.Count > 0) {
             var tuple = wagers.Dequeue();
@@ -124,6 +124,15 @@ public class MAUnityManager : MonoBehaviour
         // result the UI to defaults
         uiManager.ResetToDefaults();
     }
+
+    // WARNING: ONLY TO BE CALLED BY UNITY FOR TESTING
+    public void TestSetWager()
+    {
+        // randomly generate a wager and time to go through flow
+        float wager = Random.Range(1f, 5f);
+        float time = Random.Range(10f, 400f);
+        SetWager($"{wager}:{time}");
+    }
     
     public void SetWager(string jsWagerAndTime)
     {
@@ -155,26 +164,27 @@ public class MAUnityManager : MonoBehaviour
 
     private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
     {
+        // if we are here it indicates a correct answer => activate indicator
         uiManager.SetTimeToAnswer((int)timeDelta);
         uiManager.FlashSpinFlowIndicator(0, true, soundManager);
         yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
         
-        // by default, we set the wager that then gets triggered by our spin!
-        if (realWager > 0)
+        // run 50-50 to see if we trigger a spin
+        bool won5050 = Random.Range(0f, 1f) > 0.5f;
+        if (won5050)
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
-            
             uiManager.FlashSpinFlowIndicator(1, true, soundManager);
-            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
             
             uiManager.SetWager(realWager);
             OnSpinTriggered();
         }
         else
         {
-            // didn't get a wager :( => throw result on screen + sound!
+            // lost 50-50 => throw result on screen + sound!
             uiManager.FlashSpinFlowIndicator(1, false, soundManager);
-            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
 
             soundManager.PlaySmallLoseSound();
             uiManager.CleanUpSpinFlowIndicators();

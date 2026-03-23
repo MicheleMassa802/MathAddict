@@ -117,6 +117,7 @@ public class UIDisplayer : MonoBehaviour
         // prep to start animations
         ResetComboIndicators();
         elapsedCoroutineTime = 0;
+        yield return new WaitForSeconds(0.25f);  // wait for a bit before the roll sound and animation
         soundSystem.PlaySpinSound();
         
         float spinDuration = ComputeSpinTime(timeDelta);
@@ -335,6 +336,7 @@ public class UIDisplayer : MonoBehaviour
         }
 
         indicator.SetActive(setIndicatorActive);
+        Debug.Log(indicator.activeSelf);
         if (setIndicatorActive)
         {
             soundSystem.PlaySmallWinSound();
