@@ -107,7 +107,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 ////////////////////////////////////////
 // Detecting Question Response Events //
 ////////////////////////////////////////
-const possibleWagers = [0, 0, 0, 0, 0, 0, 1, 2, 2, 5, 5, 10];
+const possibleWagers = [1, 1, 1, 1, 1, 1, 2, 3, 3, 5, 5, 10];
 
 const observer = new MutationObserver((mutations) => {
 
