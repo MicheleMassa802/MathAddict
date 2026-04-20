@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 /*
  * Manages the UI objects present in the game, mainly the displaying of results such as outcome text
@@ -13,12 +15,15 @@ using UnityEngine.UI;
 public class UIDisplayer : MonoBehaviour
 {
     #region UI Properties set on the GameObject on the scene
+    [SerializeField] private RectTransform canvasRectTransform;
+    
     // Full Screen GameObjects
     [SerializeField] private GameObject startScreen;
     [SerializeField] private GameObject slotScreen;
     
     // Reels
     [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
+    private List<RectTransform> orderedReelImageObjectTransforms = new List<RectTransform>();
     
     // Miscellaneous
     [SerializeField] private TextMeshProUGUI betText;
@@ -37,6 +42,10 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private Sprite z;
     [SerializeField] private Sprite y;
     [SerializeField] private Sprite x;
+    
+    // Lines
+    [SerializeField] private UILineRenderer lineRenderer1;
+    [SerializeField] private UILineRenderer lineRenderer2;
     
     public WinPopup winPopupManager;
     #endregion
@@ -75,6 +84,11 @@ public class UIDisplayer : MonoBehaviour
         
         betText?.SetText("00.00");
         winText?.SetText("00.00");
+
+        foreach (var imageObject in orderedReelImageObjects)
+        {
+            orderedReelImageObjectTransforms.Add(imageObject.gameObject.GetComponent<RectTransform>());
+        }
     }
 
     public void SwitchScreens(bool toSlots)
@@ -115,6 +129,7 @@ public class UIDisplayer : MonoBehaviour
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
+        ClearLines();
         ResetComboIndicators();
         elapsedCoroutineTime = 0;
         yield return new WaitForSeconds(0.25f);  // wait for a bit before the roll sound and animation
@@ -169,6 +184,10 @@ public class UIDisplayer : MonoBehaviour
         DisplayResultText(resultNumbers);
         if (resultNumbers.rtp > 0)
         {
+            for (int i=0; i < resultNumbers.keyIndices.Count; i++)
+            {
+                DrawLine(resultNumbers.keyIndices[i], i);
+            }
             soundSystem.PlayBigWinSound(resultNumbers.jackpotTriggered);
             winPopupManager.TriggerWinPopup();
         }
@@ -349,9 +368,80 @@ public class UIDisplayer : MonoBehaviour
         
     }
 
-    private IEnumerator AnimateComboIndicators(List<Graphic> comboIndicators )
+    private void DrawLine(List<int> winningTileIndices, int lineNumber)
     {
-        yield return null;
+        var lineRenderer = lineNumber == 1 ? lineRenderer1 : lineRenderer2;
+        if (winningTileIndices == null || winningTileIndices.Count == 0)
+        {
+            lineRenderer.Points = new Vector2[0];
+            lineRenderer.SetVerticesDirty();
+            return;
+        }
+
+        // get col-row from indices
+        var sorted = winningTileIndices
+            .OrderBy(i => i / 3)
+            .ThenBy(i => i % 3)
+            .ToList();
+
+        // compute positions
+        List<Vector2> uiPoints = new List<Vector2>();
+        foreach (int index in sorted)
+        {
+            RectTransform tile = orderedReelImageObjectTransforms[index];
+            uiPoints.Add(ToUILinePoint(tile, canvasRectTransform));
+        }
+
+        // render with lineRenderer
+        lineRenderer.Points = uiPoints.ToArray();
+        lineRenderer.SetVerticesDirty();
+        StartCoroutine(BlinkLine(lineRenderer));
     }
+    
+    private IEnumerator BlinkLine(UILineRenderer line)
+    {
+        float elapsed = 0f;
+        bool visible = true;
+        var originalColor = line.color;
+
+        while (elapsed < 3f)
+        {
+            visible = !visible;
+
+            var c = originalColor;
+            c.a = visible ? 1f : 0f;
+            line.color = c;
+            line.SetVerticesDirty();
+
+            yield return new WaitForSeconds(0.5f);
+            elapsed += 0.5f;
+        }
+
+        line.color = originalColor;
+        line.SetVerticesDirty();
+    }
+
+
+    private void ClearLines()
+    {
+        lineRenderer1.Points = new Vector2[0];
+        lineRenderer2.Points = new Vector2[0];
+        lineRenderer1.SetVerticesDirty();
+        lineRenderer2.SetVerticesDirty();
+    }
+    
+    private Vector2 ToUILinePoint(RectTransform tile, RectTransform canvasRect)
+    {
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(null, tile.position);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenPos,
+            null,
+            out Vector2 uiPos
+        );
+
+        return uiPos;
+    }
+
     #endregion
 }
