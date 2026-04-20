@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -30,7 +32,7 @@ public class Spinners : MonoBehaviour
      * and deduce the progress for the combo indicators
      */
     private List<List<int>> comboProgressAtReelResolveX;
-    
+    private List<List<int>> keyTargetsThisSpin;
     // debug
     private int[][] current3By4 =
     {
@@ -50,7 +52,7 @@ public class Spinners : MonoBehaviour
 
         float win = GetRtp(wager);
         SpinResult spinResult = new SpinResult(win, reel1Index, reel2Index,
-            reel3Index, reel4Index, jackpotTriggered, comboProgressAtReelResolveX);
+            reel3Index, reel4Index, jackpotTriggered, comboProgressAtReelResolveX, keyTargetsThisSpin);
         
         #if UNITY_EDITOR
             PrintMatrix(current3By4);
@@ -121,6 +123,14 @@ public class Spinners : MonoBehaviour
         }
 
         currentReward *= wager / 2;
+
+        if (currentReward > 0)
+        {
+            // fetch positions of the 2 symbols with the highest spin counts
+            GetKeyTargetIndices(currentSpinCounts);
+        }
+        // if no reward, array left empty
+        
         return (float)Math.Round(currentReward, 2);
     }
 
@@ -214,6 +224,43 @@ public class Spinners : MonoBehaviour
         }
     }
 
+    private void GetKeyTargetIndices(Dictionary<int, int> currentSpinCounts)
+    {
+        keyTargetsThisSpin = new List<List<int>>();
+
+        var top2Symbols = currentSpinCounts
+            .OrderByDescending(kvp => kvp.Value)
+            .Take(2)
+            .Select(kvp => kvp.Key)
+            .ToList();
+        
+        // fetch indices of those 2 top symbols
+        foreach (var symbol in top2Symbols)
+        {
+            keyTargetsThisSpin.Add(GetIndicesForSymbolIn3By4(symbol));
+        }
+    }
+
+    private List<int> GetIndicesForSymbolIn3By4(int symbol)
+    {
+        List<int> indices = new List<int>();
+
+        for (int r=0; r < current3By4.Length; r++)
+        {
+            var row = current3By4[r];
+            for (int c = 0; c < row.Length; c++)
+            {
+                if (symbol == row[c])
+                {
+                    indices.Add(c*3 + r);
+                }
+            }
+        }
+        indices.Sort();
+        // Debug.Log($"{symbol} can be found at indices: {string.Join(",", indices)}");
+        return indices;
+    }
+    
     public int[][] GetCurrent3By4()
     {
         return current3By4;
@@ -238,10 +285,16 @@ public class Spinners : MonoBehaviour
          * Such that when the third spin resolves, we can go into ComboProgressAtReelResolveX[2],
          * and deduce the progress for the combo indicators
          */
-        public List<List<int>> ComboProgressAtReelResolveX;  
+        public List<List<int>> ComboProgressAtReelResolveX;
+        /*
+         * Nested array containing 2 variable len arrays containing the indices of the reels that
+         * generated the most $.
+         * Each number inside here will be 0-11 where 0 is the top left and 11 is the bottom right target.
+         */
+        public List<List<int>> keyIndices;
         public float newBalance;
 
-        public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot, List<List<int>> comboProgressMatrix)
+        public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot, List<List<int>> comboProgressMatrix, List<List<int>> keyTargets)
         {
             rtp = win;
             reel1Index = index1;
@@ -251,6 +304,7 @@ public class Spinners : MonoBehaviour
             jackpotTriggered = jackpot;
             newBalance = -1f;
             ComboProgressAtReelResolveX = comboProgressMatrix;
+            keyIndices = keyTargets;
         }
     }
     #endregion
