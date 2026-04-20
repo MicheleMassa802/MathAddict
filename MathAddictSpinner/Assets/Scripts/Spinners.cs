@@ -19,7 +19,18 @@ public class Spinners : MonoBehaviour
     private float currentReward = -1f;
     private float currentJackpot = -RewardConstants.startingJackpot;
     private bool jackpotTriggered = false;
-
+    
+    /*
+     * At the resolution of each spinner i, we have the list of 3 ints indicating:
+     *  - At index 0: # of inf (jackpot) symbols on the middle row
+     *  - At index 1: # of doubles on the board so far
+     *  - At index 2: # of triples on the board so far
+     *
+     * Such that when the third spin resolves, we can go into ComboProgressAtReelResolveX[2],
+     * and deduce the progress for the combo indicators
+     */
+    private List<List<int>> comboProgressAtReelResolveX;
+    
     // debug
     private int[][] current3By4 =
     {
@@ -36,9 +47,11 @@ public class Spinners : MonoBehaviour
         reel2Index = (reel2Index + Random.Range(SpinnerConstants.minIndexDelta, SpinnerConstants.maxIndexDelta)) % SpinnerConstants.reelLength;
         reel3Index = (reel3Index + Random.Range(SpinnerConstants.minIndexDelta, SpinnerConstants.maxIndexDelta)) % SpinnerConstants.reelLength;
         reel4Index = (reel4Index + Random.Range(SpinnerConstants.minIndexDelta, SpinnerConstants.maxIndexDelta)) % SpinnerConstants.reelLength;
-        
-        SpinResult spinResult = new SpinResult(GetRtp(wager), reel1Index, reel2Index, reel3Index, reel4Index, jackpotTriggered);
 
+        float win = GetRtp(wager);
+        SpinResult spinResult = new SpinResult(win, reel1Index, reel2Index,
+            reel3Index, reel4Index, jackpotTriggered, comboProgressAtReelResolveX);
+        
         #if UNITY_EDITOR
             PrintMatrix(current3By4);
         #endif
@@ -58,7 +71,7 @@ public class Spinners : MonoBehaviour
         
         // collect the values present in the 4x3
         Dictionary<int, int> currentSpinCounts = GetCurrent3By4Counts();
-
+        
         int number2X = 0;
         int number3X = 0;
         // check for counts
@@ -111,6 +124,58 @@ public class Spinners : MonoBehaviour
         return (float)Math.Round(currentReward, 2);
     }
 
+    private List<List<int>> GetCleanComboProgressMatrix()
+    {
+        return new List<List<int>>
+        {
+            new() {0, 0, 0},
+            new() {0, 0, 0},
+            new() {0, 0, 0},
+            new() {0, 0, 0}
+        };
+    }
+
+    // given the spin counts, returns the progress to jackpot, number of doubles and triples
+    private List<int> GetComboIndicatorInfo(Dictionary<int, int> currentSpinCounts, int reelsChecked)
+    {
+        int number2X = 0;
+        int number3X = 0;
+        foreach (KeyValuePair<int, int> symbolCount in currentSpinCounts)
+        {
+            if (symbolCount.Value >= 2) number2X++;
+            if (symbolCount.Value >= 3) number3X++;
+        }
+        
+        // check for 4 in middle row
+        Dictionary<int, int> middleRowCount = new Dictionary<int, int>();
+        middleRowCount[MAUnityManager.Instance.reels[0][reel1Index]] = 1;
+        for (int r = 1; r < reelsChecked; r++)
+        {
+            int index = r switch
+            {
+                1 => reel2Index,
+                2 => reel3Index,
+                3 => reel4Index,
+                _ => 0
+            };
+
+            int key = MAUnityManager.Instance.reels[r][index];
+            middleRowCount[key] = middleRowCount.TryGetValue(key, out int count)
+                ? count + 1
+                : 1;
+        }
+
+        int maxEquals = 1;
+        foreach (KeyValuePair<int, int> numberOfEqualsInMiddleRow in middleRowCount)
+        {
+            if (numberOfEqualsInMiddleRow.Value > maxEquals)
+            {
+                maxEquals = numberOfEqualsInMiddleRow.Value;
+            }
+        }
+        return new List<int>{maxEquals, number2X, number3X};
+    }
+        
     private Dictionary<int, int> GetCurrent3By4Counts()
     {
         // setup as 0s for everything
@@ -120,11 +185,17 @@ public class Spinners : MonoBehaviour
             currentSpinCounts[key] = 0;
         }
 
-        // get the counts
+        comboProgressAtReelResolveX = GetCleanComboProgressMatrix();
+        
+        // get the counts and check for 
         CountSymbolsInReel(MAUnityManager.Instance.reels[0], reel1Index, currentSpinCounts, 1);
+        comboProgressAtReelResolveX[0] = GetComboIndicatorInfo(currentSpinCounts, 1);
         CountSymbolsInReel(MAUnityManager.Instance.reels[1], reel2Index, currentSpinCounts, 2);
+        comboProgressAtReelResolveX[1] = GetComboIndicatorInfo(currentSpinCounts, 2);
         CountSymbolsInReel(MAUnityManager.Instance.reels[2], reel3Index, currentSpinCounts, 3);
+        comboProgressAtReelResolveX[2] = GetComboIndicatorInfo(currentSpinCounts, 3);
         CountSymbolsInReel(MAUnityManager.Instance.reels[3], reel4Index, currentSpinCounts, 4);
+        comboProgressAtReelResolveX[3] = GetComboIndicatorInfo(currentSpinCounts, 4);
         
         return currentSpinCounts;
     }
@@ -158,9 +229,19 @@ public class Spinners : MonoBehaviour
         public int reel3Index;
         public int reel4Index;
         public bool jackpotTriggered;
+        /*
+         * At the resolution of each spinner i, we have the list of 3 ints indicating:
+         *  - At index 0: # of inf (jackpot) symbols on the middle row
+         *  - At index 1: # of doubles on the board so far
+         *  - At index 2: # of triples on the board so far
+         *
+         * Such that when the third spin resolves, we can go into ComboProgressAtReelResolveX[2],
+         * and deduce the progress for the combo indicators
+         */
+        public List<List<int>> ComboProgressAtReelResolveX;  
         public float newBalance;
 
-        public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot)
+        public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot, List<List<int>> comboProgressMatrix)
         {
             rtp = win;
             reel1Index = index1;
@@ -169,6 +250,7 @@ public class Spinners : MonoBehaviour
             reel4Index = index4;
             jackpotTriggered = jackpot;
             newBalance = -1f;
+            ComboProgressAtReelResolveX = comboProgressMatrix;
         }
     }
     #endregion

@@ -1,8 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using Random = UnityEngine.Random;
-using System.Runtime.InteropServices;
 
 /*
  * Puts everything together, managing spins and UI and marrying them together into a not very happy couple,
@@ -23,6 +24,7 @@ public class MAUnityManager : MonoBehaviour
     
     // stored by the game manager for ease of access by other objects
     public List<List<int>> reels;  // 1 through 4
+    private IEnumerator spinCoroutine;
 
     private void Awake()
     {
@@ -38,7 +40,6 @@ public class MAUnityManager : MonoBehaviour
         #if UNITY_EDITOR
         wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), 25f));
         #endif
-        uiManager.SetSpinButtonText(GameConstants.awaitingText);  // no spin button changes
     }
     
     private void Start()
@@ -54,9 +55,9 @@ public class MAUnityManager : MonoBehaviour
         float currWager;
         float currTimeDelta;
         
-        #if UNITY_EDITOR
-        wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), Random.Range(25f, 300f)));
-        #endif
+        // #if UNITY_EDITOR
+        // wagers.Enqueue(new Tuple<float, float>(Random.Range(1f, 5f), Random.Range(25f, 300f)));
+        // #endif
         
         if (wagers.Count > 0) {
             var tuple = wagers.Dequeue();
@@ -67,12 +68,10 @@ public class MAUnityManager : MonoBehaviour
         {
             // this shouldn't happen, but handle it by setting the text as if a wager isn't present
             Debug.LogError("Attempted to trigger spin without a wager available!");
-            uiManager.SetSpinButtonText(GameConstants.awaitingText);
             return;
         }
         
         uiManager.SetWager(currWager);
-        uiManager.SetSpinOutcomeText(UIConstants.onHoldText);
         
         // trigger math
         Spinners.SpinResult resultNumbers = slotManager.TriggerSpin(currWager);
@@ -125,35 +124,71 @@ public class MAUnityManager : MonoBehaviour
         // result the UI to defaults
         uiManager.ResetToDefaults();
     }
+
+    // WARNING: ONLY TO BE CALLED BY UNITY FOR TESTING
+    public void TestSetWager()
+    {
+        // randomly generate a wager and time to go through flow
+        float wager = Random.Range(1f, 5f);
+        float time = Random.Range(10f, 400f);
+        SetWager($"{wager}:{time}");
+    }
     
     public void SetWager(string jsWagerAndTime)
     {
         // this method is called by JS when a question is completed, which then allows the player to spin
         // using the wagers they've accumulated in the wager queue
         Debug.Log($"Received Wager:Time: {jsWagerAndTime}");
+        
         string[] twoFloats = jsWagerAndTime.Split(':');
         if (twoFloats.Length != 2)
         {
             Debug.LogError($"Array sent by JS for wager setting is of len != 2: {twoFloats.Length}");
             return;
         }
-        float realWager = float.Parse(twoFloats[0]);
-        float timeDelta = float.Parse(twoFloats[1]);
+
+        StartCoroutine(TriggerSpinFlow(float.Parse(twoFloats[0]), float.Parse(twoFloats[1])));
+    }
+
+    private IEnumerator TriggerSpinFlow(float realWager, float timeDelta)
+    {
+        if (spinCoroutine != null)
+        {
+            yield return spinCoroutine;
+        }
         
-        // by default, we set the wager that then gets triggered by our spin!
-        if (realWager > 0)
+        spinCoroutine = SpinFLowInternal(realWager, timeDelta);
+        yield return spinCoroutine;
+        spinCoroutine = null;
+    }
+
+    private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
+    {
+        // if we are here it indicates a correct answer => activate indicator
+        uiManager.SetTimeToAnswer((int)timeDelta);
+        uiManager.FlashSpinFlowIndicator(0, true, soundManager);
+        yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+        
+        // run 50-50 to see if we trigger a spin
+        bool won5050 = Random.Range(0f, 1f) > 0.5f;
+        if (won5050)
         {
             wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
+            uiManager.FlashSpinFlowIndicator(1, true, soundManager);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
+            
             uiManager.SetWager(realWager);
-            OnSpinTriggered();  // get wager => trigger spin
+            OnSpinTriggered();
         }
         else
         {
-            // didn't get a wager :( => throw result on screen + sound!
-            uiManager.SetSpinOutcomeText(UIConstants.noWagerReceivedText);
-            soundManager.PlayTryAgainSound();
+            // lost 50-50 => throw result on screen + sound!
+            uiManager.FlashSpinFlowIndicator(1, false, soundManager);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
+
+            soundManager.PlaySmallLoseSound();
+            uiManager.CleanUpSpinFlowIndicators();
         }
-        
     }
     
     public void SetBalance(string jsBalance)

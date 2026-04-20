@@ -19,14 +19,14 @@ public class UIDisplayer : MonoBehaviour
     
     // Reels
     [SerializeField] private List<Image> orderedReelImageObjects;  // ordered from 11-13...1X-4X (12)
-    [SerializeField] private Image spinButtonImage;
     
     // Miscellaneous
-    [SerializeField] private TextMeshProUGUI spinButtonText; 
-    [SerializeField] private TextMeshProUGUI wagerText;
-    [SerializeField] private TextMeshProUGUI spinOutcomeText;
-    [SerializeField] private TextMeshProUGUI lastWinText;
+    [SerializeField] private TextMeshProUGUI betText;
+    [SerializeField] private TextMeshProUGUI winText;
     [SerializeField] private TextMeshProUGUI balanceText;
+    [SerializeField] private TextMeshProUGUI timeText;
+    [SerializeField] private List<GameObject> spinFlowIndicators;  // correct answer, spin available, spin winner
+    [SerializeField] private List<Image> filledComboIndicators;  // jackpot, 25x, 10x
     
     // Spinner Sprites
     [SerializeField] private Sprite sigma;
@@ -38,6 +38,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private Sprite y;
     [SerializeField] private Sprite x;
     
+    public WinPopup winPopupManager;
     #endregion
 
     private Dictionary<int, Sprite> symbolsMap;
@@ -47,8 +48,8 @@ public class UIDisplayer : MonoBehaviour
     
     private void Start()
     {
-        if (!startScreen || !slotScreen || !wagerText || !spinOutcomeText || !lastWinText || !spinButtonText ||
-            !spinButtonImage || !balanceText || orderedReelImageObjects.Count < 12)
+        if (!startScreen || !slotScreen || !betText || !winText || !balanceText 
+            || orderedReelImageObjects.Count < 12)
         {
             Debug.LogError($"UI properties are null. Check the GameObject {this.name}!");
             return;
@@ -72,9 +73,8 @@ public class UIDisplayer : MonoBehaviour
             {3,  x}
         };
         
-        spinOutcomeText?.SetText(UIConstants.onHoldText);
-        wagerText?.SetText($"{UIConstants.wagerText}00.00");
-        lastWinText?.SetText($"{UIConstants.lastWinText}00.00");
+        betText?.SetText("00.00");
+        winText?.SetText("00.00");
     }
 
     public void SwitchScreens(bool toSlots)
@@ -91,24 +91,33 @@ public class UIDisplayer : MonoBehaviour
 
     public void SetWager(float wager)
     {
-        wagerText?.SetText($"{UIConstants.wagerText}{Math.Truncate(100 * wager) / 100}");
+        betText?.SetText($"{Math.Truncate(100 * wager) / 100}");
     }
     
     public void SetLastWin(float lastWin)
     {
-        lastWinText?.SetText($"{UIConstants.lastWinText}{Math.Truncate(100 * lastWin) / 100}");
+        winText?.SetText($"{Math.Truncate(100 * lastWin) / 100}");
     }
 
     public void SetBalance(float balance)
     {
         balanceText?.SetText($"${Math.Truncate(100 * balance) / 100}");
     }
+
+    public void SetTimeToAnswer(int seconds)
+    {
+        int minutes = seconds / 60;
+        seconds %= 60;
+        string minutesString = minutes < 10 ? "0" + minutes : minutes.ToString();
+        timeText?.SetText($"{minutesString}:{seconds}");
+    }
     
     private IEnumerator AnimateSlotSpin(Spinners.SpinResult resultNumbers, int wagersQueueLen, SoundSystem soundSystem, float timeDelta)
     {
         // prep to start animations
-        SetSpinButtonText(GameConstants.spinningText);
+        ResetComboIndicators();
         elapsedCoroutineTime = 0;
+        yield return new WaitForSeconds(0.25f);  // wait for a bit before the roll sound and animation
         soundSystem.PlaySpinSound();
         
         float spinDuration = ComputeSpinTime(timeDelta);
@@ -118,6 +127,9 @@ public class UIDisplayer : MonoBehaviour
         List<int> resultIndices = new List<int>
             { resultNumbers.reel1Index, resultNumbers.reel2Index, resultNumbers.reel3Index, resultNumbers.reel4Index };
         int len = SpinnerConstants.reelLength;
+        
+        // set off flash indicator
+        FlashSpinFlowIndicator(2, resultNumbers.rtp > 0, soundSystem, spinDuration);
         
         // go through the X seconds of spin
         while (elapsedCoroutineTime < spinDuration)
@@ -134,6 +146,8 @@ public class UIDisplayer : MonoBehaviour
                     // settle down on the true values
                     SetReelTriplet(i + 1, resultIndices[i]);
                     settledLanes[i] = true;  // avoid settling multiple times
+                    // update comboIndicators
+                    UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i], soundSystem);
                 }
             }
             
@@ -147,6 +161,7 @@ public class UIDisplayer : MonoBehaviour
             if (!settledLanes[i])
             {
                 SetReelTriplet(i + 1, resultIndices[i]);
+                UpdateComboIndicators(resultNumbers.ComboProgressAtReelResolveX[i], soundSystem);
             }
         }
         
@@ -154,21 +169,20 @@ public class UIDisplayer : MonoBehaviour
         DisplayResultText(resultNumbers);
         if (resultNumbers.rtp > 0)
         {
-            soundSystem.PlayWinSound(resultNumbers.jackpotTriggered);
+            soundSystem.PlayBigWinSound(resultNumbers.jackpotTriggered);
+            winPopupManager.TriggerWinPopup();
         }
         else
         {
-            soundSystem.PlayLoseSound();
+            soundSystem.PlayBigLoseSound();
         }
         SetBalance(resultNumbers.newBalance);
         reelIndexes[0] = resultNumbers.reel1Index;
         reelIndexes[1] = resultNumbers.reel2Index;
         reelIndexes[2] = resultNumbers.reel3Index;
         reelIndexes[3] = resultNumbers.reel4Index;
-        
-        SetSpinButtonText(GameConstants.awaitingText);
     }
-    
+
     // sets the items for a reel triplet for a frame of the animation
     private void SetReelTriplet(int reelNumber, int reelIndex)
     {
@@ -185,6 +199,35 @@ public class UIDisplayer : MonoBehaviour
             int symbol = currReel[(reelIndex + i + len) % len];
             orderedReelImageObjects[ (reelNumber - 1) * 3 + row].sprite = symbolsMap[symbol];
             row += 1;  // update row # for UI
+        }
+    }
+
+    private void UpdateComboIndicators(List<int> resultNumbersComboProgress, SoundSystem soundSystem)
+    {
+        int triples = resultNumbersComboProgress[2];
+        int uniqueDoubles = resultNumbersComboProgress[1] - triples;
+        int tripleDoubles = (uniqueDoubles > 2) ? 2 : uniqueDoubles;
+        SetComboIndicatorFill(0, Mathf.Clamp(resultNumbersComboProgress[0]/4.0f, 0.0f, 1.0f), soundSystem);
+        SetComboIndicatorFill(1, Mathf.Clamp(
+            Mathf.Clamp(tripleDoubles/4.0f, 0.0f, 1.0f) + Mathf.Clamp(triples/4.0f, 0.0f, 1.0f),
+            0.0f, 1.0f), soundSystem);
+        SetComboIndicatorFill(2, Mathf.Clamp(resultNumbersComboProgress[1]/4.0f, 0.0f, 1.0f), soundSystem);
+    }
+    
+    private void SetComboIndicatorFill(int indicatorIndex, float progress, SoundSystem soundSystem)
+    {
+        if (!Mathf.Approximately(filledComboIndicators[indicatorIndex].fillAmount, 1.0f) && Mathf.Approximately(progress, 1.0f))
+        {
+            soundSystem.PlayComboHitSound();
+        }
+        filledComboIndicators[indicatorIndex].fillAmount = progress;
+    }
+
+    private void ResetComboIndicators()
+    {
+        foreach (var indicator in filledComboIndicators)
+        {
+            indicator.fillAmount = 0f;
         }
     }
 
@@ -205,39 +248,28 @@ public class UIDisplayer : MonoBehaviour
         {
             resultString += $"{UIConstants.lossText}";
         }
-        spinOutcomeText?.SetText(resultString); 
+        // TODO MICHELE: SET OFF ACTIVATION LIGHTS FOR COMBOS FROM HERE
         SetLastWin(resultNumbers.rtp);
+    }
+
+    public void FlashSpinFlowIndicator(int index, bool setIndicatorActive, SoundSystem soundSystem, float flashDurationOverride = -1.0f)
+    {
+        float flashDuration = flashDurationOverride < 0 ? UIConstants.spinIndicatorFlashLength[index] : flashDurationOverride;
+        StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], flashDuration , setIndicatorActive, soundSystem));
+    }
+
+    public void CleanUpSpinFlowIndicators()
+    {
+        foreach (var indicator in spinFlowIndicators)
+        {
+            indicator.SetActive(false);
+        }
     }
 
     public void ResetToDefaults()
     {
         reelIndexes = new List<int>{ 1, 1, 1, 1};
         elapsedCoroutineTime = 0; 
-        SetSpinOutcomeText(UIConstants.onHoldText);
-    }
-
-    public void SetSpinOutcomeText(string text)
-    {
-        spinOutcomeText?.SetText(text);
-    }
-
-    public void SetSpinButtonText(string text)
-    {
-        spinButtonText.text = text;
-    }
-
-    private void ToggleSpinButtonAnimation(bool startAnimation)
-    {
-        if (spinButtonPulse != null && !startAnimation)
-        {
-            StopCoroutine(spinButtonPulse);
-            spinButtonPulse = null;
-            spinButtonImage.color = new Color32(200, 200, 200, 155);
-        }
-        else if (spinButtonPulse == null &&  startAnimation)
-        {
-            spinButtonPulse = StartCoroutine(AnimateButtonClickable(spinButtonImage, new Color32(164, 105, 40, 100)));
-        }
     }
 
     private float ComputeSpinTime(float timeDelta)
@@ -246,7 +278,7 @@ public class UIDisplayer : MonoBehaviour
         const float ubLn = 5.704f;
         
         // time delta can be anything from 0s -> +inf, so we clamp between 25s and 300s to avoid absurd values
-        // I define the log of these values as constants here for efficiency sake
+        // I define the log of these values as constants here for efficiency's sake
         timeDelta = Mathf.Clamp(timeDelta, 25f, 300f);
 
         // map input to outputs through log scaling, and then map that back between 5 and 10 seconds
@@ -286,6 +318,40 @@ public class UIDisplayer : MonoBehaviour
             buttonImage.color = currColor;
             yield return new WaitForSeconds(0.1f);
         }
+    }
+
+    // toggle the gameObject on and off to make it flash
+    private IEnumerator AnimateSpinFlowIndicators(GameObject indicator, float timeDelta, bool setIndicatorActive, SoundSystem soundSystem)
+    {
+        float timeElapsed = 0.0f;
+        float flashDelay;
+
+        while (timeElapsed < timeDelta)
+        {
+            indicator.SetActive(!indicator.activeSelf);
+            flashDelay = Mathf.Lerp(0.1f, 0.25f, timeElapsed / timeDelta);
+            yield return new WaitForSeconds(flashDelay);
+            
+            timeElapsed += flashDelay;
+        }
+
+        indicator.SetActive(setIndicatorActive);
+        Debug.Log(indicator.activeSelf);
+        if (setIndicatorActive)
+        {
+            soundSystem.PlaySmallWinSound();
+        }
+        else
+        {
+            soundSystem.PlaySmallLoseSound();
+        }
+        
+        
+    }
+
+    private IEnumerator AnimateComboIndicators(List<Graphic> comboIndicators )
+    {
+        yield return null;
     }
     #endregion
 }
