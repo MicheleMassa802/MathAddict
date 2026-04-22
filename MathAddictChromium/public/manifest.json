@@ -13,7 +13,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://mathacademy.com/*"],
+      "matches": ["https://example.com/"],
       "js": ["src/content.js"],
       "run_at": "document_idle"
     }
@@ -28,7 +28,7 @@
     "storage"
   ],
   "host_permissions": [
-    "https://mathacademy.com/*"
+    "https://example.com/"
   ],
 
   "web_accessible_resources": [
