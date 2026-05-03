@@ -48,7 +48,7 @@ public class SoundSystem : MonoBehaviour
 
         // start out the game on Mute
         soundOn = true;
-        ToggleSound();
+        ToggleSound("false");
     }
 
     private IEnumerator PlaySfxCoroutine(AudioClip audioClip, float clipVolume) {
@@ -123,8 +123,9 @@ public class SoundSystem : MonoBehaviour
     }
     #endregion
     
-    public void ToggleSound()
+    public void ToggleSound(string contactControllerString)
     {
+        bool contactController = contactControllerString == "true";
         if (soundOn)
         {
             soundOn = false;
@@ -144,6 +145,12 @@ public class SoundSystem : MonoBehaviour
             soundOn = true;
             audioButtonImage.sprite = audioOn;
             sfxSource.volume = prevSFXVolume;
+        }
+        
+        // send message to JS layer to toggle sound in second unity instance
+        if (contactController)
+        {
+            MAUnityManager.Instance.ParseAndToggleSound();
         }
     }
 }

@@ -13,6 +13,7 @@ public class MAUnityManager : MonoBehaviour
 {
     // This manager is a singleton
     public static MAUnityManager Instance;
+    public static int UnityInstanceId = 0;
     
     private Queue<Tuple<float, float>> wagers = new();
     private float balance = 0f;
@@ -98,6 +99,10 @@ public class MAUnityManager : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void SendResults(string resultString);  
     // Takes in a string that encodes a result object into json for the extension to handle
+    
+    [DllImport("__Internal")]
+    private static extern void SendToggleSound(string instanceString);  
+    // Takes in a string representing the unity instance to send the message to in order to toggle its sound
     #endif
     
     private void ParseAndSendResult(Spinners.SpinResult resultNumbers)
@@ -107,6 +112,16 @@ public class MAUnityManager : MonoBehaviour
         
         #if UNITY_WEBGL && !UNITY_EDITOR
         SendResults(resultJson);
+        #endif
+    }
+    
+    public void ParseAndToggleSound()
+    {
+        string resultJson = "{\"type\":\"toggleSound\",\"instanceId\":" + UnityInstanceId + "}";
+        Debug.Log($"Simulating send to JS: {resultJson}");
+        
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        SendToggleSound(resultJson);
         #endif
     }
     
@@ -199,6 +214,22 @@ public class MAUnityManager : MonoBehaviour
         
         balance = realBalance;
         uiManager.SetBalance(balance);
+    }
+    
+    public void ToggleSound(string noOpArg)
+    {
+        // this method is called by JS when toggling sound in the other unity instance
+        soundManager.ToggleSound("false");
+    }
+    
+    public void SetInstanceId(string instanceId)
+    {
+        // this method is called by JS when starting a session to let the unity instance know its ID from
+        // the POV of the JS controller
+        Debug.Log($"Received InstanceId: {instanceId}");
+        int id = int.Parse(instanceId);
+
+        UnityInstanceId = id;
     }
     #endregion
     

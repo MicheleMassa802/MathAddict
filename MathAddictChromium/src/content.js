@@ -33,15 +33,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         } else {
             sendResponse({status: "removed"});
         }
-
-    } else if (request.action === "toggleSound") {
-        console.log("[Content] Toggling sound:", request.enabled);
-
-        // turn off sound on both unity instances
-        sendMessageToUnity(div1Id, "ToggleSound", request.enabled ? "1" : "0");
-        sendMessageToUnity(div2Id, "ToggleSound", request.enabled ? "1" : "0");
-        sendResponse({ status: "sound toggled" });
-
     } else {
         console.warn("Invalid/Unknown action received:", request.action);
         sendResponse({ status: "invalid/unknown action" });
@@ -216,12 +207,24 @@ window.addEventListener("message", (event) => {
                 sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
                 sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
                 console.log(debugPrefix, '[LoadPlayerData] Balance Loaded $', loadedBalance);
+
+                // tell unity instances their instance ID
+                sendMessageToUnity(div1Id, "SetInstanceId", div1Id.toString());
+                sendMessageToUnity(div2Id, "SetInstanceId", div2Id.toString());
             } else {
                 console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', loadedBalance);
             }
         });
 
         startQuestionTimer();
+    } else if (event.data?.type === "toggleSound") {
+        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Asking to Toggle Sound");
+
+        // get int and communicate new state to the other board
+        const parsedJson = JSON.parse(event.data.payload);
+        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
+
+        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "ToggleSound", "");
     }
 });
 
