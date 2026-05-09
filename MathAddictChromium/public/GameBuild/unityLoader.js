@@ -33,11 +33,11 @@ function unityShowBanner(msg, type) {
 }
 
 var buildUrl = "Build";
-var loaderUrl = buildUrl + "/MASpinner_v0.3.3_debug.loader.js";
+var loaderUrl = buildUrl + "/MASpinner_v0.3.4.loader.js";
 var config = {
-    dataUrl: buildUrl + "/MASpinner_v0.3.3_debug.data",
-    frameworkUrl: buildUrl + "/MASpinner_v0.3.3_debug.framework.js",
-    codeUrl: buildUrl + "/MASpinner_v0.3.3_debug.wasm",
+    dataUrl: buildUrl + "/MASpinner_v0.3.4.data",
+    frameworkUrl: buildUrl + "/MASpinner_v0.3.4.framework.js",
+    codeUrl: buildUrl + "/MASpinner_v0.3.4.wasm",
     streamingAssetsUrl: "StreamingAssets",
     companyName: "DefaultCompany",
     productName: "MathAddictSpinner",

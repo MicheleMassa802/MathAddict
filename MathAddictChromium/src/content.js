@@ -185,7 +185,7 @@ window.addEventListener("message", (event) => {
         console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
         // keep balance up to date!
         const parsedJson = JSON.parse(event.data.payload);
-        const winAmount = parsedJson?.winAmount;
+        const winAmount = parsedJson?.rtp;
         if (winAmount > 0) {
             sessionBalance += winAmount;
             savePlayerData(sessionBalance, (newBalance) => {
@@ -193,8 +193,12 @@ window.addEventListener("message", (event) => {
                 console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', sessionBalance);
             });
         } else {
-            console.log(debugPrefix, "[HandleUnityMessage] Balance returned not valid, won't update!");
+            console.log(debugPrefix, "[HandleUnityMessage] RTP returned not valid, won't update!");
         }
+
+        // send update to other instance!
+        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
+        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "SetBalance", sessionBalance.toString());
 
     } else if (event.data?.type === "unityReady") {
         console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
@@ -202,7 +206,7 @@ window.addEventListener("message", (event) => {
         // go through startup sequence
         loadPlayerData((loadedBalance) => {
             // callback when load is finished
-            if (loadedBalance > 0) {
+            if (loadedBalance >= 0) {
                 sessionBalance = loadedBalance;
                 sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
                 sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
@@ -218,12 +222,10 @@ window.addEventListener("message", (event) => {
 
         startQuestionTimer();
     } else if (event.data?.type === "toggleSound") {
-        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Asking to Toggle Sound");
-
         // get int and communicate new state to the other board
         const parsedJson = JSON.parse(event.data.payload);
         const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
-
+        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Asking to Toggle Sound on instance: ", Math.abs(sourceUnityInstance - 1));
         sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "ToggleSound", "");
     }
 });

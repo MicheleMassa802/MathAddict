@@ -293,6 +293,7 @@ public class Spinners : MonoBehaviour
          */
         public List<List<int>> keyIndices;
         public float newBalance;
+        public int instanceId;
 
         public SpinResult(float win, int index1, int index2, int index3, int index4, bool jackpot, List<List<int>> comboProgressMatrix, List<List<int>> keyTargets)
         {
@@ -305,6 +306,7 @@ public class Spinners : MonoBehaviour
             newBalance = -1f;
             ComboProgressAtReelResolveX = comboProgressMatrix;
             keyIndices = keyTargets;
+            instanceId = MAUnityManager.UnityInstanceId;
         }
     }
     #endregion

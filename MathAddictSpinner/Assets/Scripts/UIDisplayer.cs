@@ -355,7 +355,6 @@ public class UIDisplayer : MonoBehaviour
         }
 
         indicator.SetActive(setIndicatorActive);
-        Debug.Log(indicator.activeSelf);
         if (setIndicatorActive)
         {
             soundSystem.PlaySmallWinSound();
