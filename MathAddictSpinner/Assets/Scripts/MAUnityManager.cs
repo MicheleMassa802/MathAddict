@@ -82,9 +82,6 @@ public class MAUnityManager : MonoBehaviour
         
         // show results, send in the updated wagers count to decide if the button stays interactable
         uiManager.SetResult(resultNumbers, wagers.Count, soundManager, currTimeDelta);
-        
-        // add to wallet (dramatically if possible)
-        ParseAndSendResult(resultNumbers);
     }
 
     private void OnDestroy()
@@ -105,7 +102,7 @@ public class MAUnityManager : MonoBehaviour
     // Takes in a string representing the unity instance to send the message to in order to toggle its sound
     #endif
     
-    private void ParseAndSendResult(Spinners.SpinResult resultNumbers)
+    public void ParseAndSendResult(Spinners.SpinResult resultNumbers)
     {
         string resultJson = JsonUtility.ToJson(resultNumbers);
         Debug.Log($"Simulating send to JS: {resultJson}");
@@ -219,6 +216,7 @@ public class MAUnityManager : MonoBehaviour
     public void ToggleSound(string noOpArg)
     {
         // this method is called by JS when toggling sound in the other unity instance
+        Debug.Log($"Triggered Sound Toggle on instance: {UnityInstanceId}");
         soundManager.ToggleSound("false");
     }
     

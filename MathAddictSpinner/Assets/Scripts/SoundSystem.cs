@@ -141,7 +141,11 @@ public class SoundSystem : MonoBehaviour
         }
         else
         {
-            ToggleMusic(backgroundMusic);
+            if (contactController)
+            {
+                // if music comes from unity button, then turn on music, else, leave off
+                ToggleMusic(backgroundMusic);
+            }
             soundOn = true;
             audioButtonImage.sprite = audioOn;
             sfxSource.volume = prevSFXVolume;

@@ -181,6 +181,7 @@ public class UIDisplayer : MonoBehaviour
         }
         
         // clean up
+        MAUnityManager.Instance.ParseAndSendResult(resultNumbers);
         DisplayResultText(resultNumbers);
         if (resultNumbers.rtp > 0)
         {
