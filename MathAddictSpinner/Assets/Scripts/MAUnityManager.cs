@@ -216,8 +216,8 @@ public class MAUnityManager : MonoBehaviour
     public void ToggleSound(string noOpArg)
     {
         // this method is called by JS when toggling sound in the other unity instance
-        Debug.Log($"Triggered Sound Toggle on instance: {UnityInstanceId}");
-        soundManager.ToggleSound("false");
+        Debug.Log($"Triggered Sound Toggle by JS on instance: {UnityInstanceId}");
+        soundManager.ToggleSoundInternal("false");
     }
     
     public void SetInstanceId(string instanceId)

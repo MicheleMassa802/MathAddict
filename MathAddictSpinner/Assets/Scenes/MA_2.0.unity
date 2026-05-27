@@ -1966,7 +1966,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 344774328}
         m_TargetAssemblyTypeName: SoundSystem, Assembly-CSharp
-        m_MethodName: ToggleSound
+        m_MethodName: ToggleSoundInternal
         m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

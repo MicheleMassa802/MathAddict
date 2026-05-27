@@ -1,6 +1,12 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Diagnostics;
+using System.Reflection;
+using UnityEngine.Scripting;
+using Debug = UnityEngine.Debug;
+
 
 /*
  * Manages the sounds played triggered based on actions from the player or other events.
@@ -48,7 +54,7 @@ public class SoundSystem : MonoBehaviour
 
         // start out the game on Mute
         soundOn = true;
-        ToggleSound("false");
+        ToggleSoundInternal("false");
     }
 
     private IEnumerator PlaySfxCoroutine(AudioClip audioClip, float clipVolume) {
@@ -123,9 +129,10 @@ public class SoundSystem : MonoBehaviour
     }
     #endregion
     
-    public void ToggleSound(string contactControllerString)
+    public void ToggleSoundInternal(string contactControllerString)
     {
         bool contactController = contactControllerString == "true";
+
         if (soundOn)
         {
             soundOn = false;
