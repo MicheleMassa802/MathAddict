@@ -1,10 +1,11 @@
+let soundEnabled = false;
 const debugPrefix = "[MathAddict][Popup]";
 const targetHost = "mathacademy.com";
 const targetPage = "mathacademy.com/tasks/";
 
 const appendElement = "appendDiv";
 const removeElement = "removeDiv";
-const secretElement = "secretDiv";
+const toggleSound = "toggleSound";
 const statusElement = "status";
 
 function handleAppendDivClick() {
@@ -38,20 +39,19 @@ function handleRemoveDivClick() {
     });
 }
 
-function handleSecretDivClick() {
-    console.log(debugPrefix, "[handleSecretDivClick] Clicked button to append secret div!");
+function handleToggleSoundClick() {
+    soundEnabled = !soundEnabled;
+
+    document.getElementById("toggleSound").textContent =
+        soundEnabled ? "Sound: ON" : "Sound: OFF";
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id;
         if (tabId) {
             chrome.tabs.sendMessage(tabId, {
-                action: secretElement,
-                text: "Hello from the extension!",
-            }, (response) => {
-                console.log(debugPrefix, "[handleSecretDivClick] Secret message sent to content script. Response:", response);
+                action: "toggleSound",
+                enabled: soundEnabled
             });
-        } else {
-            console.error(debugPrefix, "[handleSecretDivClick] Can't send 'APPEND' message. No tab found for Content.js");
         }
     });
 }
@@ -68,18 +68,18 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const removeBtn = document.getElementById(removeElement);
     const status = document.getElementById(statusElement);
 
-    if (!inTargetSite) {
-        appendBtn.disabled = true;
-        removeBtn.disabled = true;
-        status.textContent = "This extension only works on " + targetHost + "!";
-    } else if (!inTargetPage) {
-        appendBtn.disabled = true;
-        removeBtn.disabled = true;
-        status.textContent = "This extension only works on task pages!";
-    }
+    // if (!inTargetSite) {
+    //     appendBtn.disabled = true;
+    //     removeBtn.disabled = true;
+    //     status.textContent = "This extension only works on " + targetHost + "!";
+    // } else if (!inTargetPage) {
+    //     appendBtn.disabled = true;
+    //     removeBtn.disabled = true;
+    //     status.textContent = "This extension only works on task pages!";
+    // }
 });
 
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
 document.getElementById(removeElement).addEventListener("click", handleRemoveDivClick);
-// document.getElementById(secretElement).addEventListener("click", handleSecretDivClick);
+document.getElementById(toggleSound).addEventListener("click", handleToggleSoundClick);
 // appendDiv & removeDiv are the button element id
