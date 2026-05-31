@@ -71,8 +71,8 @@ function AppendMADiv(index) {
     border.style.width = "405px";
     border.style.height = "716px";
     border.style.padding = "10px";
-    border.style.backgroundColor = "#b9b8d7";
     border.style.border = "none";
+    border.style.boxSizing = "border-box";
     div.appendChild(border);
 
     const iframe = document.createElement("iframe");
