@@ -1,5 +1,5 @@
 // imports
-import { connect, disconnect, send, setLogger } from "../../computer-controlled-signal-randomized-translingual-neurostimulator/gedge_serial.js"
+import { connect, disconnect, send, setLogger } from "../../TLNSSubmodule/gedge_serial.js"
 
 // state
 let div1Active = false;

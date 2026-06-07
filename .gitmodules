@@ -1,1 +1,4 @@
 
+[submodule "TLNSSubmodule"]
+	path = TLNSSubmodule
+	url = https://github.com/MicheleMassa802/computer-controlled-signal-randomized-translingual-neurostimulator.git
