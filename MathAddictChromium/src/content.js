@@ -1,3 +1,7 @@
+// imports
+import { connect, disconnect, send, setLogger } from "../../computer-controlled-signal-randomized-translingual-neurostimulator/gedge_serial.js"
+
+// state
 let div1Active = false;
 let div2Active = false;
 let sessionBalance = 0;
@@ -33,6 +37,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         } else {
             sendResponse({status: "removed"});
         }
+
+    } else if (request.action === "connectHw") {
+        setLogger((msg, cls) => {
+            console.log(`[hardware] ${msg}`);
+        });
+        connect();
+        send("PING TEST");
+
     } else {
         console.warn("Invalid/Unknown action received:", request.action);
         sendResponse({ status: "invalid/unknown action" });
@@ -40,8 +52,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Helpers
+// take care of disconnect
+window.addEventListener("beforeunload", (event) => disconnect());
 
+
+// Helpers
 /**
  * Creates the div with the unity game loaded, at most 2 of these can be present at once!
  * @param index number between 0 (left) and 1 (right) to point to the active games

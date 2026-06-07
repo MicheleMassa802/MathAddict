@@ -19,7 +19,7 @@
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            width: 225px;
+            width: 175px;
         }
 
         button {
@@ -52,29 +52,32 @@
             font-weight: bold;
         }
 
-        #content {
+        #content, #buttons {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 0.75rem;
         }
     </style>
 </head>
 <body>
     <div id="content">
-        <h1> Welcome to Math Addict! </h1>
+        <h1> Welcome to <br> Math Addict! </h1>
         <div id="buttons">
             <button id="appendDiv">Start</button>
+            <button id="connectHw">TLNS</button>
             <button id="removeDiv">Quit</button>
-<!--            <button id="toggleSound">Sound: OFF</button>-->
         </div>
         <div id="status"></div>
-<!--        <div id="secretDiv" style="cursor:pointer; font-size:1.2rem;">:)</div>-->
     </div>
 
     <script type="module">
         const status = document.getElementById('status');
         document.getElementById('appendDiv').addEventListener('click', () => {
             status.textContent = 'MA Running!';
+        });
+        document.getElementById('connectHw').addEventListener('click', () => {
+            status.textContent = 'Connecting TLNS!';
         });
         document.getElementById('removeDiv').addEventListener('click', () => {
             status.textContent = 'MA Shut Down!';

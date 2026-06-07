@@ -25,10 +25,14 @@
 
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "serial"
   ],
   "host_permissions": [
     "https://example.com/"
+  ],
+  "optional_permissions": [
+    "serial"
   ],
 
   "web_accessible_resources": [

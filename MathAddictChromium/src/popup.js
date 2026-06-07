@@ -1,11 +1,10 @@
-let soundEnabled = false;
 const debugPrefix = "[MathAddict][Popup]";
 const targetHost = "mathacademy.com";
 const targetPage = "mathacademy.com/tasks/";
 
 const appendElement = "appendDiv";
 const removeElement = "removeDiv";
-const toggleSound = "toggleSound";
+const connectHw = "connectHw";
 const statusElement = "status";
 
 function handleAppendDivClick() {
@@ -39,19 +38,15 @@ function handleRemoveDivClick() {
     });
 }
 
-function handleToggleSoundClick() {
-    soundEnabled = !soundEnabled;
-
-    document.getElementById("toggleSound").textContent =
-        soundEnabled ? "Sound: ON" : "Sound: OFF";
-
+function handleConnectHwClick() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id;
         if (tabId) {
-            chrome.tabs.sendMessage(tabId, {
-                action: "toggleSound",
-                enabled: soundEnabled
+            chrome.tabs.sendMessage(tabId, { action: connectHw }, (response) => {
+                console.log(debugPrefix, "[HandleConnectHwClick] Connect message sent to content script. Response:", response);
             });
+        } else {
+            console.error(debugPrefix, "[HandleConnectHwClick] Can't send 'CONNECT' message. No tab found for Content.js");
         }
     });
 }
@@ -81,5 +76,5 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
 document.getElementById(removeElement).addEventListener("click", handleRemoveDivClick);
-document.getElementById(toggleSound).addEventListener("click", handleToggleSoundClick);
+document.getElementById(connectHw).addEventListener("click", handleConnectHwClick);
 // appendDiv & removeDiv are the button element id
