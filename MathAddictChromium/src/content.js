@@ -43,12 +43,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log(`[hardware] ${msg}`);
         });
         connect();
-        send("PING TEST");
+        send("PING Start Test");
+        sendResponse({status: "connectHw handler executed connect() & send() test"});
 
     } else {
         console.warn("Invalid/Unknown action received:", request.action);
         sendResponse({ status: "invalid/unknown action" });
-
     }
 });
 
@@ -160,18 +160,20 @@ function handleResultBox(resultBox) {
     // call time to compute wager to send
     // const currentWager = endQuestionTimerAndFetchWager();
     const timeDelta = endQuestionTimerAndFetchTimeDelta();
-    const currentWager = possibleWagers[Math.floor(Math.random() * possibleWagers.length)];
+    let currentWager = possibleWagers[Math.floor(Math.random() * possibleWagers.length)];
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
     if (isCorrect) {
         console.log(debugPrefix, '[HandleResultBox] CORRECT answer detected');
-        // send "<wager>:<timeDelta>" string!
         sendMessageToUnity(div1Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
         sendMessageToUnity(div2Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
 
     } else if (isIncorrect) {
+        currentWager = -1;
         console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
+        sendMessageToUnity(div1Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
+        sendMessageToUnity(div2Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
 
     } else {
         console.log(debugPrefix, '[HandleResultBox] WTF is that answer being detected bro, be fr...');
@@ -202,6 +204,10 @@ window.addEventListener("message", (event) => {
         const parsedJson = JSON.parse(event.data.payload);
         const winAmount = parsedJson?.rtp;
         if (winAmount > 0) {
+            // trigger hardware
+            send("WIN PING");
+
+            // update session balance
             sessionBalance += winAmount;
             savePlayerData(sessionBalance, (newBalance) => {
                 // callback when save is finished

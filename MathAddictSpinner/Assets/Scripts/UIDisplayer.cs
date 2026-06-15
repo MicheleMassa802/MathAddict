@@ -183,8 +183,10 @@ public class UIDisplayer : MonoBehaviour
         // clean up
         MAUnityManager.Instance.ParseAndSendResult(resultNumbers);
         DisplayResultText(resultNumbers);
+        
         if (resultNumbers.rtp > 0)
         {
+            soundSystem.TurnMusicOn();
             for (int i=0; i < resultNumbers.keyIndices.Count; i++)
             {
                 DrawLine(resultNumbers.keyIndices[i], i);
@@ -194,6 +196,7 @@ public class UIDisplayer : MonoBehaviour
         }
         else
         {
+            soundSystem.TurnMusicOff();
             soundSystem.PlayBigLoseSound();
         }
         SetBalance(resultNumbers.newBalance);
