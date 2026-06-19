@@ -4,12 +4,16 @@ import { connect, disconnect, send, setLogger } from "../../TLNSSubmodule/gedge_
 // state
 let div1Active = false;
 let div2Active = false;
+let timeDelta = 100;
 let sessionBalance = 0;
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];
 const extensionDivIdPrefix = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
+
+// constants
+const DEFAULT_SIGNAL = "F00100I15D000500";
 
 
 ///////////////////////////////////////////
@@ -43,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log(`[hardware] ${msg}`);
         });
         connect();
-        send("PING Start Test");
+        send(DEFAULT_SIGNAL);  // send debug ping at session start TODO: remove this!
         sendResponse({status: "connectHw handler executed connect() & send() test"});
 
     } else {
@@ -159,7 +163,7 @@ const observer = new MutationObserver((mutations) => {
 function handleResultBox(resultBox) {
     // call time to compute wager to send
     // const currentWager = endQuestionTimerAndFetchWager();
-    const timeDelta = endQuestionTimerAndFetchTimeDelta();
+    timeDelta = endQuestionTimerAndFetchTimeDelta();
     let currentWager = possibleWagers[Math.floor(Math.random() * possibleWagers.length)];
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
@@ -205,7 +209,7 @@ window.addEventListener("message", (event) => {
         const winAmount = parsedJson?.rtp;
         if (winAmount > 0) {
             // trigger hardware
-            send("WIN PING");
+            send(computeTLNSSignal(timeDelta));
 
             // update session balance
             sessionBalance += winAmount;
@@ -322,4 +326,35 @@ function sendMessageToUnity(index, method, arg) {
         method: method,
         value: arg,
     }, '*');
+}
+
+// copy to the client side C# code to compute reel spin time, which we'll use to score the time spent to solve the
+// question to compute our signal to send
+function computeSpinTime(timeDeltaMeasured) {
+    const lbLn = 3.219; // ln(25)
+    const ubLn = 5.704; // ln(300)
+
+    timeDeltaMeasured = Math.min(Math.max(timeDeltaMeasured, 25), 300);
+    const rate = (Math.log(timeDeltaMeasured) - lbLn) / (ubLn - lbLn);
+    return rate * 5 + 5;
+}
+
+function computePerformanceScore(spinTime) {
+    // spinTime is between 5 and 10
+    const normalized = (spinTime - 5) / 5;
+    return 1 - normalized;  // invert to make 1 = good
+}
+
+function buildWinSignal(score) {
+    const freq = 150 + 100 * score;  // 150–250
+    const intensity = Math.round(10 + 10 * score);  // 10–20
+    const duration = 200 + 300 * score;  // 200–500 ms
+    return `F${freq.toFixed(0)}I${intensity}D${duration.toFixed(0)}`;
+}
+
+function computeTLNSSignal(timeDeltaMeasured) {
+    const spinTime = computeSpinTime(timeDeltaMeasured);
+    const score = computePerformanceScore(spinTime);
+
+    return buildWinSignal(score);
 }
