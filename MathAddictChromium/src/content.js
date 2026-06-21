@@ -6,6 +6,7 @@ let div1Active = false;
 let div2Active = false;
 let timeDelta = 100;
 let sessionBalance = 0;
+let hwConnected = false;
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];

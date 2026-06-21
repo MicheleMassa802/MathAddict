@@ -147,6 +147,7 @@ public class SoundSystem : MonoBehaviour
         {
             soundOn = false;
             audioButtonImage.sprite = audioOff;
+            TurnMusicOff();
             
             // check for active sfx!
             if (_sfxOneShotPlayer != null)

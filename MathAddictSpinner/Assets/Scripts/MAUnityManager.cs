@@ -181,7 +181,8 @@ public class MAUnityManager : MonoBehaviour
             // incorrect answer, trigger negative stuff
             uiManager.FlashSpinFlowIndicator(0, false, soundManager);
             yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
-
+            
+            soundManager.TurnMusicOff();
             soundManager.PlaySmallLoseSound();
             uiManager.CleanUpSpinFlowIndicators();
         }

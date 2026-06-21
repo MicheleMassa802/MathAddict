@@ -196,7 +196,6 @@ public class UIDisplayer : MonoBehaviour
         }
         else
         {
-            soundSystem.TurnMusicOff();
             soundSystem.PlayBigLoseSound();
         }
         SetBalance(resultNumbers.newBalance);
