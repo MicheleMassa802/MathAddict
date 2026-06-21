@@ -84,15 +84,15 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const removeBtn = document.getElementById(removeElement);
     const status = document.getElementById(statusElement);
 
-    // if (!inTargetSite) {
-    //     appendBtn.disabled = true;
-    //     removeBtn.disabled = true;
-    //     status.textContent = "This extension only works on " + targetHost + "!";
-    // } else if (!inTargetPage) {
-    //     appendBtn.disabled = true;
-    //     removeBtn.disabled = true;
-    //     status.textContent = "This extension only works on task pages!";
-    // }
+    if (!inTargetSite) {
+        appendBtn.disabled = true;
+        removeBtn.disabled = true;
+        status.textContent = "This extension only works on " + targetHost + "!";
+    } else if (!inTargetPage) {
+        appendBtn.disabled = true;
+        removeBtn.disabled = true;
+        status.textContent = "This extension only works on task pages!";
+    }
 });
 
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
