@@ -6,7 +6,7 @@ let div1Active = false;
 let div2Active = false;
 let timeDelta = 100;
 let sessionBalance = 0;
-let hwConnected = false;
+let hwEnabled = false;
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];
@@ -47,9 +47,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         setLogger((msg, cls) => {
             console.log(`[hardware] ${msg}`);
         });
-        connect();
-        send(DEFAULT_SIGNAL);  // send debug ping at session start TODO: remove this!
-        sendResponse({status: "connectHw handler executed connect() & send() test"});
+        hwEnabled = connect();
+        sendResponse({status: "connectHw handler executed connect() with result enabled = ", hwEnabled});
+
+    } else if (request.action === "disconnectHw") {
+        hwEnabled = !disconnect();
+        sendResponse({status: "disconnectHw handler executed disconnect() with result enabled = ", hwEnabled});
 
     } else {
         console.warn("Invalid/Unknown action received:", request.action);
@@ -210,7 +213,9 @@ window.addEventListener("message", (event) => {
         const winAmount = parsedJson?.rtp;
         if (winAmount > 0) {
             // trigger hardware
-            send(computeTLNSSignal(timeDelta));
+            if (hwEnabled) {
+                send(computeTLNSSignal(timeDelta));
+            }
 
             // update session balance
             sessionBalance += winAmount;
