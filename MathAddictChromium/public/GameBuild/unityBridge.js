@@ -7,9 +7,6 @@ window.addEventListener('message', (event) => {
 
     const { method, value } = event.data;
     if (typeof unityInstance !== 'undefined') {
-        console.log(debugPrefix, `[SendMessageToUnity] Calling ${method}(${value})`);
         unityInstance.SendMessage("MAUnityManager", method, String(value));
-    } else {
-        console.warn(debugPrefix, '[SendMessageToUnity] Unity instance not ready');
     }
 });

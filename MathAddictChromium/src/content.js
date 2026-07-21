@@ -161,8 +161,6 @@ const observer = new MutationObserver((mutations) => {
             }
         }
     }
-
-    console.log(debugPrefix, "[AnalyzeMutations] No question result box or continue style change found in Mutated Nodes");
 });
 
 function handleResultBox(resultBox) {
@@ -174,13 +172,11 @@ function handleResultBox(resultBox) {
     const isIncorrect = !!resultBox.querySelector('.questionWidget-incorrectText');
 
     if (isCorrect) {
-        console.log(debugPrefix, '[HandleResultBox] CORRECT answer detected');
         sendMessageToUnity(div1Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
         sendMessageToUnity(div2Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
 
     } else if (isIncorrect) {
         currentWager = -1;
-        console.log(debugPrefix, '[HandleResultBox] INCORRECT answer detected');
         sendMessageToUnity(div1Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
         sendMessageToUnity(div2Id, "SetWager", `${currentWager.toString()}:${timeDelta}`);
 
@@ -191,7 +187,6 @@ function handleResultBox(resultBox) {
 
 function handleContinueButtonDismissed() {
     // continue clicked and dismissed => start of lesson / start of new question
-    console.log(debugPrefix, '[HandleContinueButtonDismissed] CONTINUE button clicked!');
     startQuestionTimer();
 }
 
@@ -208,7 +203,6 @@ observer.observe(document.body, {
 //////////////////////////////
 window.addEventListener("message", (event) => {
     if (event.data?.type === "unityResult") {
-        console.log(debugPrefix, "[HandleUnityMessage] Received message from Unity:", event.data.payload);
         // keep balance up to date!
         const parsedJson = JSON.parse(event.data.payload);
         const winAmount = parsedJson?.rtp;
@@ -224,8 +218,6 @@ window.addEventListener("message", (event) => {
                 // callback when save is finished
                 console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', sessionBalance);
             });
-        } else {
-            console.log(debugPrefix, "[HandleUnityMessage] RTP returned not valid, won't update!");
         }
 
         // send update to other instance!
@@ -242,7 +234,6 @@ window.addEventListener("message", (event) => {
                 sessionBalance = loadedBalance;
                 sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
                 sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
-                console.log(debugPrefix, '[LoadPlayerData] Balance Loaded $', loadedBalance);
 
                 // tell unity instances their instance ID
                 sendMessageToUnity(div1Id, "SetInstanceId", div1Id.toString());
@@ -257,7 +248,6 @@ window.addEventListener("message", (event) => {
         // get int and communicate new state to the other board
         const parsedJson = JSON.parse(event.data.payload);
         const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
-        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Asking to Toggle Sound on instance: ", Math.abs(sourceUnityInstance - 1));
         sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "ToggleSound", "");
     }
 });

@@ -13,7 +13,6 @@ const connectHwBtn = document.getElementById("connectHw");
 const status = document.getElementById("status");
 
 function handleAppendDivClick() {
-    console.log(debugPrefix, "[HandleAppendDivClick] Clicked button to append new div!");
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id;
@@ -22,7 +21,7 @@ function handleAppendDivClick() {
                 action: appendElement,
                 text: "Hello from the extension!",
             }, (response) => {
-                console.log(debugPrefix, "[HandleAppendDivClick] Append message sent to content script. Response:", response);
+                // no-op
             });
         } else {
             console.error(debugPrefix, "[HandleAppendDivClick] Can't send 'APPEND' message. No tab found for Content.js");
@@ -35,7 +34,7 @@ function handleRemoveDivClick() {
         const tabId = tabs[0]?.id;
         if (tabId) {
             chrome.tabs.sendMessage(tabId, { action: removeElement }, (response) => {
-                console.log(debugPrefix, "[HandleRemoveDivClick] Remove message sent to content script. Response:", response);
+                // no-op
             });
         } else {
             console.error(debugPrefix, "[HandleRemoveDivClick] Can't send 'REMOVE' message. No tab found for Content.js");
@@ -64,7 +63,7 @@ function toggleHardware(connect) {
         const tabId = tabs[0]?.id;
         if (tabId) {
             chrome.tabs.sendMessage(tabId, { action: connect ? connectHw : disconnectHw }, (response) => {
-                console.log(debugPrefix, "[HandleConnectHwClick] ", connect ? "Connect " : "Disconnect " ,"message sent to content script. Response:", response);
+                // no-op
             });
         } else {
             console.error(debugPrefix, "[HandleConnectHwClick] Can't send '", connect ? "Connect" : "Disconnect" ,"' message. No tab found for Content.js");
