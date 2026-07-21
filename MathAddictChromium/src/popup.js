@@ -56,7 +56,7 @@ function handleConnectHwClick() {
         status.textContent = "TLNS Disconnected.";
     }
 
-    toggleHardware(tlnsConnected)
+    toggleHardware(tlnsConnected);
 }
 
 function toggleHardware(connect) {

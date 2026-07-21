@@ -7,14 +7,12 @@ let div2Active = false;
 let timeDelta = 100;
 let sessionBalance = 0;
 let hwEnabled = false;
+let hwConnectCount = 0;
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];
 const extensionDivIdPrefix = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
-
-// constants
-const DEFAULT_SIGNAL = "F00100I15D000500";
 
 
 ///////////////////////////////////////////
@@ -47,7 +45,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         setLogger((msg, cls) => {
             console.log(`[hardware] ${msg}`);
         });
-        hwEnabled = connect();
+
+        const debugHw = hwConnectCount === 0;
+        hwEnabled = connect(debugHw);
+        hwConnectCount++;
         sendResponse({status: "connectHw handler executed connect() with result enabled = ", hwEnabled});
 
     } else if (request.action === "disconnectHw") {
@@ -326,6 +327,10 @@ script.onload = () => script.remove();
 
 function sendMessageToUnity(index, method, arg) {
     // calls the given method while passing through the string arg
+    if (unityInstances.length < 1) {
+        return;
+    }
+
     const iframe = unityInstances[index];
     iframe.contentWindow.postMessage({
         type: 'UNITY_COMMAND',
