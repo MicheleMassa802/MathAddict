@@ -128,6 +128,16 @@ public class SoundSystem : MonoBehaviour
         PlaySfx(comboHitSound, SpinVolume);
     }
     #endregion
+
+    public void TurnMusicOn()
+    {
+        ToggleMusic(backgroundMusic);
+    }
+    
+    public void TurnMusicOff()
+    {
+        ToggleMusic();
+    }
     
     public void ToggleSoundInternal(string contactControllerString)
     {
@@ -136,8 +146,8 @@ public class SoundSystem : MonoBehaviour
         if (soundOn)
         {
             soundOn = false;
-            ToggleMusic();
             audioButtonImage.sprite = audioOff;
+            TurnMusicOff();
             
             // check for active sfx!
             if (_sfxOneShotPlayer != null)
@@ -148,11 +158,6 @@ public class SoundSystem : MonoBehaviour
         }
         else
         {
-            if (contactController)
-            {
-                // if music comes from unity button, then turn on music, else, leave off
-                ToggleMusic(backgroundMusic);
-            }
             soundOn = true;
             audioButtonImage.sprite = audioOn;
             sfxSource.volume = prevSFXVolume;

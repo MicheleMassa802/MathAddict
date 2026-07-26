@@ -176,30 +176,36 @@ public class MAUnityManager : MonoBehaviour
 
     private IEnumerator SpinFLowInternal(float realWager, float timeDelta)
     {
-        // if we are here it indicates a correct answer => activate indicator
-        uiManager.SetTimeToAnswer((int)timeDelta);
-        uiManager.FlashSpinFlowIndicator(0, true, soundManager);
-        yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
-        
-        // run 50-50 to see if we trigger a spin
-        bool won5050 = Random.Range(0f, 1f) > 0.5f;
-        if (won5050)
+        if (realWager < 0)
         {
-            wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
-            uiManager.FlashSpinFlowIndicator(1, true, soundManager);
-            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
+            // incorrect answer, trigger negative stuff
+            uiManager.FlashSpinFlowIndicator(0, false, soundManager);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
             
-            uiManager.SetWager(realWager);
-            OnSpinTriggered();
+            soundManager.TurnMusicOff();
+            soundManager.PlaySmallLoseSound();
+            uiManager.CleanUpSpinFlowIndicators();
         }
         else
         {
-            // lost 50-50 => throw result on screen + sound!
-            uiManager.FlashSpinFlowIndicator(1, false, soundManager);
-            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[1]);
-
-            soundManager.PlaySmallLoseSound();
-            uiManager.CleanUpSpinFlowIndicators();
+            // if we are here it indicates a correct answer => activate indicator
+            uiManager.SetTimeToAnswer((int)timeDelta);
+            uiManager.FlashSpinFlowIndicator(0, true, soundManager);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[0]);
+            
+            // trigger spin
+            wagers.Enqueue(new Tuple<float, float>(realWager, timeDelta));
+            uiManager.FlashSpinFlowIndicator(2, true, soundManager);
+            yield return new WaitForSeconds(UIConstants.spinIndicatorFlashLength[2]);
+            
+            /*
+             * Note, we used to have a middle phase (index 1), but that has been removed, however
+             * I was too lazy to actually remove it so its just hidden and gets skipped over here
+             * in the process. Just don't get confused by the 0->2 index jump.
+             */
+            
+            uiManager.SetWager(realWager);
+            OnSpinTriggered();
         }
     }
     
