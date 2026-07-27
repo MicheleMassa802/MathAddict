@@ -58,6 +58,48 @@
             align-items: center;
             gap: 0.75rem;
         }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            display: none;
+        }
+
+        .slider {
+            width: 40px;
+            height: 20px;
+            background-color: #162938;
+            border-radius: 20px;
+            position: relative;
+            transition: background-color 0.2s ease;
+            border: 2px solid #9fa0fd;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: #9fa0fd;
+            border-radius: 50%;
+            top: 2px;
+            left: 1px;
+            transition: transform 0.2s ease;
+        }
+
+        input:checked + .slider {
+            background-color: #9fa0fd;
+        }
+
+        input:checked + .slider::before {
+            transform: translateX(20px);
+        }
+
     </style>
 </head>
 <body>
@@ -66,6 +108,11 @@
         <div id="buttons">
             <button id="appendDiv">Start</button>
             <button id="connectHw">TLNS</button>
+            <label class="toggle">
+                <input type="checkbox" id="tlnsToggle">
+                <span>TLNS Auto‑Start</span>
+                <span class="slider"></span>
+            </label>
             <button id="removeDiv">Quit</button>
         </div>
         <div id="status"></div>

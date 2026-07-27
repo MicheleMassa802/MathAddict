@@ -214,7 +214,7 @@ window.addEventListener("message", (event) => {
 
             // update session balance
             sessionBalance += winAmount;
-            savePlayerData(sessionBalance, (newBalance) => {
+            savePlayerBalance(sessionBalance, (newBalance) => {
                 // callback when save is finished
                 console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', sessionBalance);
             });
@@ -228,7 +228,7 @@ window.addEventListener("message", (event) => {
         console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
 
         // go through startup sequence
-        loadPlayerData((loadedBalance) => {
+        loadPlayerBalance((loadedBalance) => {
             // callback when load is finished
             if (loadedBalance >= 0) {
                 sessionBalance = loadedBalance;
@@ -270,14 +270,6 @@ function startQuestionTimer() {
     startTime = Date.now();
 }
 
-function endQuestionTimerAndFetchWager() {
-    const endTime = Date.now();
-    const questionTimeSeconds = (endTime - startTime) / 1000;
-    let index = Math.floor(questionTimeSeconds / wagerTimeSteps);
-    index = Math.min(index, allWagers.length - 1);
-    return allWagers[index];
-}
-
 function endQuestionTimerAndFetchTimeDelta() {
     const endTime = Date.now();
     return (endTime - startTime) / 1000;  // delta in seconds
@@ -286,9 +278,10 @@ function endQuestionTimerAndFetchTimeDelta() {
 /////////////////////////
 // Player Data Storage //
 /////////////////////////
-const playerBalanceKey = "playerBalance"
+const playerBalanceKey = "playerBalance";
+const playerAutoStartTLNSKey = "autoTLNS";
 
-function savePlayerData(newBalance, callback) {
+function savePlayerBalance(newBalance, callback) {
     chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
         if (typeof callback === 'function') {
             callback(newBalance);
@@ -296,10 +289,25 @@ function savePlayerData(newBalance, callback) {
     });
 }
 
-function loadPlayerData(callback) {
+function loadPlayerBalance(callback) {
     chrome.storage.sync.get(playerBalanceKey, (res) => {
         const storedBalance = res[playerBalanceKey] ?? 0.0;
         callback(storedBalance);
+    });
+}
+
+function savePlayerTLNSPref(autoStart, callback) {
+    chrome.storage.sync.set({ [playerAutoStartTLNSKey]: autoStart }, () => {
+        if (typeof callback === 'function') {
+            callback(autoStart);
+        }
+    });
+}
+
+function loadPlayerTLNSPref(callback) {
+    chrome.storage.sync.get(playerAutoStartTLNSKey, (res) => {
+        const autoStartTLNS = res[playerAutoStartTLNSKey] ?? false;
+        callback(autoStartTLNS);
     });
 }
 
