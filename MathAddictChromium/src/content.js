@@ -8,6 +8,7 @@ let timeDelta = 100;
 let sessionBalance = 0;
 let hwEnabled = false;
 let hwConnectCount = 0;
+let tlnsPrefValue = false;
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];
@@ -19,47 +20,89 @@ const debugPrefix = "[MathAddict][Content]";
 // Listening for start signal from popup //
 ///////////////////////////////////////////
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "appendDiv" && !div1Active && !div2Active) {
+    const handler = handlers[request.action];
 
-        const left = AppendMADiv(div1Id);
-        document.body.appendChild(left.div);
-        unityInstances[div1Id] = left.iframe;
-        div1Active = true;
-        const right = AppendMADiv(div2Id);
-        document.body.appendChild(right.div);
-        unityInstances[div2Id] = right.iframe;
-        div2Active = true;
-        sendResponse({ status: "success" });
+    if (handler) {
+        handler(request, sender, sendResponse);
+    } else {
+        console.warn("Unknown action:", request.action);
+        sendResponse({ status: "unknown action" });
+    }
 
-    } else if (request.action === "removeDiv") {
+    return true;
+});
+
+// Command Router
+const handlers = {
+    appendDiv(request, sender, sendResponse) {
+        if (!div1Active && !div2Active) {
+            const left = AppendMADiv(div1Id);
+            document.body.appendChild(left.div);
+            unityInstances[div1Id] = left.iframe;
+            div1Active = true;
+
+            const right = AppendMADiv(div2Id);
+            document.body.appendChild(right.div);
+            unityInstances[div2Id] = right.iframe;
+            div2Active = true;
+
+            sendResponse({ status: "success" });
+        } else {
+            sendResponse({ status: "already active" });
+        }
+    },
+
+    removeDiv(request, sender, sendResponse) {
         div1Active = !RemoveMADiv(div1Id);
         div2Active = !RemoveMADiv(div2Id);
 
         if (div1Active || div2Active) {
-            sendResponse({status: "Divs to remove not found"});
+            sendResponse({ status: "Divs to remove not found" });
         } else {
-            sendResponse({status: "removed"});
+            sendResponse({ status: "removed" });
         }
+    },
 
-    } else if (request.action === "connectHw") {
-        setLogger((msg, cls) => {
-            console.log(`[hardware] ${msg}`);
-        });
+    connectHw(request, sender, sendResponse) {
+        setLogger((msg, cls) => console.log(`[hardware] ${msg}`));
 
         const debugHw = hwConnectCount === 0;
         hwEnabled = connect(debugHw);
         hwConnectCount++;
-        sendResponse({status: "connectHw handler executed connect() with result enabled = ", hwEnabled});
 
-    } else if (request.action === "disconnectHw") {
+        sendResponse({
+            status: "connectHw executed",
+            enabled: hwEnabled
+        });
+    },
+
+    disconnectHw(request, sender, sendResponse) {
         hwEnabled = !disconnect();
-        sendResponse({status: "disconnectHw handler executed disconnect() with result enabled = ", hwEnabled});
+        sendResponse({
+            status: "disconnectHw executed",
+            enabled: hwEnabled
+        });
+    },
 
-    } else {
-        console.warn("Invalid/Unknown action received:", request.action);
-        sendResponse({ status: "invalid/unknown action" });
+    toggleTLNSPref(request, sender, sendResponse) {
+        const newValue = request.value;
+        tlnsPrefValue = newValue;
+        savePlayerTLNSPref(newValue);
+
+        sendResponse({ status: "tlns auto-save updated", value: newValue });
+    },
+
+    getTLNSAutoPref(request, sender, sendResponse) {
+        loadPlayerTLNSPref((storedPref) => {
+            tlnsPrefValue = storedPref;
+            sendResponse({ status: "tlns auto-save loaded", value: tlnsPrefValue });
+        });
+
+        return true;  // allow async sendResponse
     }
-});
+};
+
+
 
 // take care of disconnect
 window.addEventListener("beforeunload", (event) => disconnect());
@@ -296,7 +339,7 @@ function loadPlayerBalance(callback) {
     });
 }
 
-function savePlayerTLNSPref(autoStart, callback) {
+function savePlayerTLNSPref(autoStart, callback = null) {
     chrome.storage.sync.set({ [playerAutoStartTLNSKey]: autoStart }, () => {
         if (typeof callback === 'function') {
             callback(autoStart);

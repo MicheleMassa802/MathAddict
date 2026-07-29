@@ -2,16 +2,17 @@ const debugPrefix = "[MathAddict][Popup]";
 const targetHost = "mathacademy.com";
 const targetPage = "mathacademy.com/tasks/";
 
-let tlnsConnected = false;
-
 const appendElement = "appendDiv";
 const removeElement = "removeDiv";
 const connectHw = "connectHw";
 const disconnectHw = "disconnectHw";
-const toggleTLNSAutoSave = "toggleTLNSPref"
+const toggleTLNSAutoSave = "toggleTLNSPref";
+const getTLNSAutoSave = "getTLNSAutoPref";
 const statusElement = "status";
 const connectHwBtn = document.getElementById("connectHw");
 const status = document.getElementById("status");
+let tlnsConnected = false;
+
 
 function handleAppendDivClick() {
 
@@ -73,31 +74,16 @@ function toggleHardware(connect) {
 }
 
 function handleToggleTLNSAutoSave(newValue) {
-    let tlnsValue;
-    loadPlayerTLNSPref((storedPref) => {
-        tlnsValue = storedPref;
-        tlnsToggle.checked = storedPref;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, { action: toggleTLNSAutoSave, value: newValue }, (response) => {
+                // no-op
+            });
+        } else {
+            console.error(debugPrefix, "[HandleToggleTLNSAutoSave] Can't send 'TOGGLE' message. No tab found for Content.js");
+        }
     });
-    console.log("Toggling value prev: " + tlnsValue + " with new: " + newValue);
-    savePlayerTLNSPref(newValue);
-
-    let tlnsNewValue;
-    loadPlayerTLNSPref((newStoredPref) => {
-        tlnsNewValue = newStoredPref;
-        tlnsToggle.checked = newStoredPref;
-    });
-    console.log("Saved new value " + tlnsNewValue);
-
-    // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    //     const tabId = tabs[0]?.id;
-    //     if (tabId) {
-    //         chrome.tabs.sendMessage(tabId, { action: toggleTLNSAutoSave, value: newValue }, (response) => {
-    //             // no-op
-    //         });
-    //     } else {
-    //         console.error(debugPrefix, "[HandleToggleTLNSAutoSave] Can't send 'TOGGLE' message. No tab found for Content.js");
-    //     }
-    // });
 }
 
 //////////////////////////
@@ -123,30 +109,18 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     }
 });
 
+const tlnsToggle = document.getElementById('tlnsToggle');
 document.getElementById(appendElement).addEventListener("click", handleAppendDivClick);
 document.getElementById(removeElement).addEventListener("click", handleRemoveDivClick);
 document.getElementById(connectHw).addEventListener("click", handleConnectHwClick);
-const tlnsToggle = document.getElementById('tlnsToggle');
 tlnsToggle.addEventListener("change", () => {
     const newPrefValue = tlnsToggle.checked;
     handleToggleTLNSAutoSave(newPrefValue);
 });
-// appendDiv & removeDiv are the button element id
 
-
-function savePlayerTLNSPref(autoStart, callback) {
-    chrome.storage.sync.set({ [playerAutoStartTLNSKey]: autoStart }, () => {
-        if (typeof callback === 'function') {
-            callback(autoStart);
-        }
+// Load TLNS setting from prefs at startup
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: getTLNSAutoSave }, (response) => {
+        tlnsToggle.checked = response.value;
     });
-}
-
-function loadPlayerTLNSPref(callback) {
-    chrome.storage.sync.get(playerAutoStartTLNSKey, (res) => {
-        const autoStartTLNS = res[playerAutoStartTLNSKey] ?? false;
-        callback(autoStartTLNS);
-    });
-}
-
-const playerAutoStartTLNSKey = "autoTLNS";
+});
