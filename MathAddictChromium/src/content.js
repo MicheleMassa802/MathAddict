@@ -46,6 +46,14 @@ const handlers = {
             unityInstances[div2Id] = right.iframe;
             div2Active = true;
 
+            // check hw pref to connect
+            loadPlayerTLNSPref((storedPref) => {
+                tlnsPrefValue = storedPref;
+                if (storedPref) {
+                    connectHwRoutine();
+                }
+            });
+
             sendResponse({ status: "success" });
         } else {
             sendResponse({ status: "already active" });
@@ -64,11 +72,7 @@ const handlers = {
     },
 
     connectHw(request, sender, sendResponse) {
-        setLogger((msg, cls) => console.log(`[hardware] ${msg}`));
-
-        const debugHw = hwConnectCount === 0;
-        hwEnabled = connect(debugHw);
-        hwConnectCount++;
+        connectHwRoutine();
 
         sendResponse({
             status: "connectHw executed",
@@ -102,7 +106,13 @@ const handlers = {
     }
 };
 
+function connectHwRoutine() {
+    setLogger((msg, cls) => console.log(`[hardware] ${msg}`));
 
+    const debugHw = hwConnectCount === 0;
+    hwEnabled = connect(debugHw);
+    hwConnectCount++;
+}
 
 // take care of disconnect
 window.addEventListener("beforeunload", (event) => disconnect());
@@ -239,6 +249,56 @@ observer.observe(document.body, {
     attributes: true,
     attributeFilter: ['style', 'class'],
 });
+
+//////////////////////////////
+// Detect user's flow in MA //
+//////////////////////////////
+const targetHost = "mathacademy.com";
+let lastUrl = location.href;
+
+function checkPageState() {
+    const url = location.href;
+
+    const inTargetSite = url.includes(targetHost);
+    const inTaskPage = url.includes("/task/");
+
+    if (url !== lastUrl) {
+        lastUrl = url;
+
+        if (inTargetSite) {
+            console.log("[MA] User is inside MathAcademy");
+        }
+
+        if (inTargetSite && inTaskPage) {
+            console.log("[MA] User entered a task page");
+            autoStartUnityLaunchRoutine();
+        }
+    }
+}
+
+function autoStartUnityLaunchRoutine() {
+    loadPlayerTLNSPref((storedPref) => {
+        tlnsPrefValue = storedPref;  // update stored pref w/ latest load
+
+        if (storedPref) {
+            console.log("Auto Starting!");
+            // tell popup.js that we need to trigger the div appending
+            chrome.runtime.sendMessage({
+                action: "contentEvent",
+                event: "enteredTaskPage",
+                data: { tlnsPrefValue: storedPref }
+            });
+
+        }
+    });
+}
+
+// Detect SPA navigation
+const urlObserver = new MutationObserver(checkPageState);
+urlObserver.observe(document, { childList: true, subtree: true });
+
+// Check on initial load as well
+checkPageState();
 
 
 //////////////////////////////

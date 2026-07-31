@@ -86,6 +86,21 @@ function handleToggleTLNSAutoSave(newValue) {
     });
 }
 
+///////////////////////////
+// Auto Start Triggering //
+///////////////////////////
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === "popupEvent") {
+        if (msg.event === "enteredTaskPage") {
+            const pref = msg.data.tlnsPrefValue;
+            handleAppendDivClick();
+            if (pref) {
+                handleConnectHwClick();
+            }
+        }
+    }
+});
+
 //////////////////////////
 // Control init buttons //
 //////////////////////////
