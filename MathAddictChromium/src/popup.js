@@ -92,6 +92,7 @@ function handleToggleTLNSAutoSave(newValue) {
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === "popupEvent") {
         if (msg.event === "enteredTaskPage") {
+            console.log("triggering!");
             const pref = msg.data.tlnsPrefValue;
             handleAppendDivClick();
             if (pref) {

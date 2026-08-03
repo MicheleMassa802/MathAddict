@@ -254,26 +254,35 @@ observer.observe(document.body, {
 // Detect user's flow in MA //
 //////////////////////////////
 const targetHost = "mathacademy.com";
-let lastUrl = location.href;
 
 function checkPageState() {
-    const url = location.href;
+    const currentUrl = location.href;
 
-    const inTargetSite = url.includes(targetHost);
-    const inTaskPage = url.includes("/task/");
+    chrome.runtime.sendMessage({ action: "getLastUrl" }, (response) => {
+        const storedLastUrl = response.url;
 
-    if (url !== lastUrl) {
-        lastUrl = url;
-
-        if (inTargetSite) {
-            console.log("[MA] User is inside MathAcademy");
+        // initialize lastUrl on background.js the first time
+        if (!storedLastUrl) {
+            chrome.runtime.sendMessage({ action: "setLastUrl", url: currentUrl });
+            return;
         }
 
-        if (inTargetSite && inTaskPage) {
-            console.log("[MA] User entered a task page");
-            autoStartUnityLaunchRoutine();
+        if (storedLastUrl !== currentUrl) {
+            chrome.runtime.sendMessage({ action: "setLastUrl", url: currentUrl });
+
+            const inTargetSite = currentUrl.includes(targetHost);
+            const inTaskPage = currentUrl.includes("/tasks/");
+
+            if (inTargetSite) {
+                console.log("[MA] User is inside MathAcademy");
+            }
+
+            if (inTargetSite && inTaskPage) {
+                console.log("[MA] User entered a task page");
+                autoStartUnityLaunchRoutine();
+            }
         }
-    }
+    });
 }
 
 function autoStartUnityLaunchRoutine() {
@@ -293,13 +302,8 @@ function autoStartUnityLaunchRoutine() {
     });
 }
 
-// Detect SPA navigation
-const urlObserver = new MutationObserver(checkPageState);
-urlObserver.observe(document, { childList: true, subtree: true });
-
-// Check on initial load as well
+// Check on initial load (which happens every page switch / navigation event)
 checkPageState();
-
 
 //////////////////////////////
 // Debugging Unity Messages //
