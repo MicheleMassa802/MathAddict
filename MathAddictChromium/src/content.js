@@ -2,13 +2,9 @@
 import { connect, disconnect, send, setLogger } from "../../TLNSSubmodule/gedge_serial.js"
 
 // state
-let div1Active = false;
-let div2Active = false;
+let localExtensionState = {};
 let timeDelta = 100;
-let sessionBalance = 0;
-let hwEnabled = false;
-let hwConnectCount = 0;
-let tlnsPrefValue = false;
+
 const div1Id = 0;
 const div2Id = 1;
 const unityInstances = [];
@@ -39,21 +35,26 @@ const handlers = {
             const left = AppendMADiv(div1Id);
             document.body.appendChild(left.div);
             unityInstances[div1Id] = left.iframe;
-            div1Active = true;
+            localExtensionState.div1Active = true;
 
             const right = AppendMADiv(div2Id);
             document.body.appendChild(right.div);
             unityInstances[div2Id] = right.iframe;
-            div2Active = true;
+            localExtensionState.div2Active = true;
 
             // check hw pref to connect
             loadPlayerTLNSPref((storedPref) => {
-                tlnsPrefValue = storedPref;
+                localExtensionState.tlnsPrefValue = storedPref;
                 if (storedPref) {
                     connectHwRoutine();
                 }
             });
 
+            setExtensionState({
+                div1Active: localExtensionState.div1Active,
+                div2Active: localExtensionState.div2Active,
+                tlnsPrefValue: localExtensionState.tlnsPrefValue
+            });
             sendResponse({ status: "success" });
         } else {
             sendResponse({ status: "already active" });
@@ -61,10 +62,15 @@ const handlers = {
     },
 
     removeDiv(request, sender, sendResponse) {
-        div1Active = !RemoveMADiv(div1Id);
-        div2Active = !RemoveMADiv(div2Id);
+        localExtensionState.div1Active = !RemoveMADiv(div1Id);
+        localExtensionState.div2Active = !RemoveMADiv(div2Id);
 
-        if (div1Active || div2Active) {
+        setExtensionState({
+            div1Active: localExtensionState.div1Active,
+            div2Active: localExtensionState.div2Active
+        });
+
+        if (localExtensionState.div1Active || localExtensionState.div2Active) {
             sendResponse({ status: "Divs to remove not found" });
         } else {
             sendResponse({ status: "removed" });
@@ -76,30 +82,34 @@ const handlers = {
 
         sendResponse({
             status: "connectHw executed",
-            enabled: hwEnabled
+            enabled: localExtensionState.hwEnabled
         });
     },
 
     disconnectHw(request, sender, sendResponse) {
-        hwEnabled = !disconnect();
+        localExtensionState.hwEnabled = !disconnect();
+
+        setExtensionState({hwEnabled: localExtensionState.hwEnabled});
         sendResponse({
             status: "disconnectHw executed",
-            enabled: hwEnabled
+            enabled: localExtensionState.hwEnabled
         });
     },
 
     toggleTLNSPref(request, sender, sendResponse) {
         const newValue = request.value;
-        tlnsPrefValue = newValue;
+        localExtensionState.tlnsPrefValue = newValue;
         savePlayerTLNSPref(newValue);
+        setExtensionState({tlnsPrefValue: localExtensionState.tlnsPrefValue});
 
-        sendResponse({ status: "tlns auto-save updated", value: newValue });
+        sendResponse({ status: "tlns auto-save updated", value: localExtensionState.tlnsPrefValue });
     },
 
     getTLNSAutoPref(request, sender, sendResponse) {
         loadPlayerTLNSPref((storedPref) => {
-            tlnsPrefValue = storedPref;
-            sendResponse({ status: "tlns auto-save loaded", value: tlnsPrefValue });
+            localExtensionState.tlnsPrefValue = storedPref;
+            sendResponse({ status: "tlns auto-save loaded", value: localExtensionState.tlnsPrefValue });
+            setExtensionState({tlnsPrefValue: localExtensionState.tlnsPrefValue});
         });
 
         return true;  // allow async sendResponse
@@ -109,9 +119,14 @@ const handlers = {
 function connectHwRoutine() {
     setLogger((msg, cls) => console.log(`[hardware] ${msg}`));
 
-    const debugHw = hwConnectCount === 0;
-    hwEnabled = connect(debugHw);
-    hwConnectCount++;
+    const debugHw = localExtensionState.hwConnectCount === 0;
+    localExtensionState.hwEnabled = connect(debugHw);
+    localExtensionState.hwConnectCount++;
+
+    setExtensionState({
+        hwEnabled: localExtensionState.hwEnabled,
+        hwConnectCount: localExtensionState.hwConnectCount
+    });
 }
 
 // take care of disconnect
@@ -258,17 +273,15 @@ const targetHost = "mathacademy.com";
 function checkPageState() {
     const currentUrl = location.href;
 
-    chrome.runtime.sendMessage({ action: "getLastUrl" }, (response) => {
-        const storedLastUrl = response.url;
+    getLastUrl((storedLastUrl) => {
 
-        // initialize lastUrl on background.js the first time
         if (!storedLastUrl) {
-            chrome.runtime.sendMessage({ action: "setLastUrl", url: currentUrl });
+            setLastUrl(currentUrl);
             return;
         }
 
         if (storedLastUrl !== currentUrl) {
-            chrome.runtime.sendMessage({ action: "setLastUrl", url: currentUrl });
+            setLastUrl(currentUrl);
 
             const inTargetSite = currentUrl.includes(targetHost);
             const inTaskPage = currentUrl.includes("/tasks/");
@@ -287,18 +300,9 @@ function checkPageState() {
 
 function autoStartUnityLaunchRoutine() {
     loadPlayerTLNSPref((storedPref) => {
-        tlnsPrefValue = storedPref;  // update stored pref w/ latest load
+        localExtensionState.tlnsPrefValue = storedPref;  // update stored pref w/ latest load
 
-        if (storedPref) {
-            console.log("Auto Starting!");
-            // tell popup.js that we need to trigger the div appending
-            chrome.runtime.sendMessage({
-                action: "contentEvent",
-                event: "enteredTaskPage",
-                data: { tlnsPrefValue: storedPref }
-            });
-
-        }
+        // TODO: NEED TO TRIGGER AUTO START
     });
 }
 
@@ -315,21 +319,22 @@ window.addEventListener("message", (event) => {
         const winAmount = parsedJson?.rtp;
         if (winAmount > 0) {
             // trigger hardware
-            if (hwEnabled) {
+            if (localExtensionState.hwEnabled) {
                 send(computeTLNSSignal(timeDelta));
             }
 
             // update session balance
-            sessionBalance += winAmount;
-            savePlayerBalance(sessionBalance, (newBalance) => {
+            localExtensionState.sessionBalance += winAmount;
+            savePlayerBalance(localExtensionState.sessionBalance, (newBalance) => {
                 // callback when save is finished
-                console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', sessionBalance);
+                console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', localExtensionState.sessionBalance);
             });
+            setExtensionState({sessionBalance: localExtensionState.sessionBalance});
         }
 
         // send update to other instance!
         const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
-        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "SetBalance", sessionBalance.toString());
+        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "SetBalance", localExtensionState.sessionBalance.toString());
 
     } else if (event.data?.type === "unityReady") {
         console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
@@ -338,13 +343,15 @@ window.addEventListener("message", (event) => {
         loadPlayerBalance((loadedBalance) => {
             // callback when load is finished
             if (loadedBalance >= 0) {
-                sessionBalance = loadedBalance;
+                localExtensionState.sessionBalance = loadedBalance;
                 sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
                 sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
 
                 // tell unity instances their instance ID
                 sendMessageToUnity(div1Id, "SetInstanceId", div1Id.toString());
                 sendMessageToUnity(div2Id, "SetInstanceId", div2Id.toString());
+                setExtensionState({sessionBalance: localExtensionState.sessionBalance});
+
             } else {
                 console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', loadedBalance);
             }
@@ -363,14 +370,6 @@ window.addEventListener("message", (event) => {
 /////////////////////////////
 // Timing Logic for Wagers //
 /////////////////////////////
-const minWager = 1;
-const lowWager = 2;
-const midWager = 5;
-const highWager = 10;
-const maxWager = 25;
-const allWagers = [maxWager, highWager, midWager, lowWager, minWager];
-const wagerTimeSteps = 25;  // every 25 seconds, the wager becomes lower
-
 let startTime = Date.now();
 
 function startQuestionTimer() {
@@ -415,6 +414,41 @@ function loadPlayerTLNSPref(callback) {
     chrome.storage.sync.get(playerAutoStartTLNSKey, (res) => {
         const autoStartTLNS = res[playerAutoStartTLNSKey] ?? false;
         callback(autoStartTLNS);
+    });
+}
+
+
+////////////////////
+// STATE HANDLING //
+////////////////////
+
+function getExtensionState(callback) {
+    chrome.runtime.sendMessage({ action: "getState" }, (state) => {
+        callback(state);
+    });
+}
+
+function setExtensionState(newState, callback) {
+    chrome.runtime.sendMessage({
+        action: "setState",
+        data: newState
+    }, (response) => {
+        if (callback) callback(response);
+    });
+}
+
+function getLastUrl(callback) {
+    chrome.runtime.sendMessage({ action: "getLastUrl" }, (response) => {
+        callback(response.url);
+    });
+}
+
+function setLastUrl(url, callback) {
+    chrome.runtime.sendMessage({
+        action: "setLastUrl",
+        url
+    }, (response) => {
+        if (callback) callback(response);
     });
 }
 
