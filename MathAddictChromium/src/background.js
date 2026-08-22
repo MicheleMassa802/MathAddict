@@ -4,7 +4,6 @@
 console.log("Background service worker loaded");
 
 let lastUrl = null;
-
 let extensionState = {
     tlnsPrefValue: null,
     unityAppended: false,

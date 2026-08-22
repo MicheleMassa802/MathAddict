@@ -7,13 +7,15 @@ const removeElement = "removeDiv";
 const connectHw = "connectHw";
 const disconnectHw = "disconnectHw";
 const toggleTLNSAutoSave = "toggleTLNSPref";
-const getTLNSAutoSave = "getTLNSAutoPref";
 const statusElement = "status";
 const connectHwBtn = document.getElementById("connectHw");
 const status = document.getElementById("status");
-let tlnsConnected = false;
 
+let localExtensionState = {};
 
+//////////////////////////////////////////
+// Direct communication with Content.js //
+//////////////////////////////////////////
 function handleAppendDivClick() {
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -45,19 +47,21 @@ function handleRemoveDivClick() {
 }
 
 function handleConnectHwClick() {
-    if (!tlnsConnected) {
-        tlnsConnected = true;
+    if (!localExtensionState.hwEnabled) {
+        localExtensionState.hwEnabled = true;
         connectHwBtn.textContent = "TLNS (ON)";
         connectHwBtn.style.borderColor = "#3BDA16";
         status.textContent = "TLNS Connected!";
     } else {
-        tlnsConnected = false;
+        localExtensionState.hwEnabled = false;
         connectHwBtn.textContent = "TLNS (OFF)";
         connectHwBtn.style.borderColor = "#9FA0FD";
         status.textContent = "TLNS Disconnected.";
     }
 
-    toggleHardware(tlnsConnected);
+    toggleHardware(localExtensionState.hwEnabled);
+    // localExtensionState.hwEnabled doesn't update the global state as content.js takes
+    // care of that
 }
 
 function toggleHardware(connect) {
@@ -86,21 +90,6 @@ function handleToggleTLNSAutoSave(newValue) {
     });
 }
 
-///////////////////////////
-// Auto Start Triggering //
-///////////////////////////
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === "popupEvent") {
-        if (msg.event === "enteredTaskPage") {
-            console.log("triggering!");
-            const pref = msg.data.tlnsPrefValue;
-            handleAppendDivClick();
-            if (pref) {
-                handleConnectHwClick();
-            }
-        }
-    }
-});
 
 //////////////////////////
 // Control init buttons //
@@ -134,9 +123,27 @@ tlnsToggle.addEventListener("change", () => {
     handleToggleTLNSAutoSave(newPrefValue);
 });
 
-// Load TLNS setting from prefs at startup
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: getTLNSAutoSave }, (response) => {
-        tlnsToggle.checked = response.value;
+
+////////////////////////////////////////////
+// STATE HANDLING (through background.js) //
+////////////////////////////////////////////
+function getExtensionState(callback) {
+    chrome.runtime.sendMessage({ action: "getState" }, (state) => {
+        callback(state);
     });
+}
+
+
+/////////////
+// Startup //
+/////////////
+getExtensionState((state) => {
+    // note we can only do this due to the fact background.js always runs, content.js runs before
+    // popup.js (as it's injected into the page upon load / reload), and popup.js only runs whenever
+    // the user opens the popup itself. So background.js has default values => content.js sets them
+    // up => popup.js fetches the updated values from background.js
+    localExtensionState = state;
+    tlnsToggle.checked = state.tlnsPrefValue;
 });
+
+
