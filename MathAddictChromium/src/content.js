@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Command Router
 const handlers = {
     appendDiv(request, sender, sendResponse) {
-        if (!div1Active && !div2Active) {
+        if (!localExtensionState.div1Active && !localExtensionState.div2Active) {
             const left = AppendMADiv(div1Id);
             document.body.appendChild(left.div);
             unityInstances[div1Id] = left.iframe;
@@ -298,7 +298,13 @@ function autoStartUnityLaunchRoutine() {
     loadPlayerTLNSPref((storedPref) => {
         localExtensionState.tlnsPrefValue = storedPref;  // update stored pref w/ latest load
 
-        // TODO: NEED TO TRIGGER AUTO START
+        // trigger auto start for unity (only relevant at startup, hence no need to immediatly check
+        // state prior to this)
+        handlers.appendDiv(
+            { action: "appendDiv" },
+            null,
+            () => {}
+        );
 
         setExtensionState({ tlnsPrefValue: localExtensionState.tlnsPrefValue});
     });

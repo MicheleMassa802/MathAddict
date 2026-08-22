@@ -17,7 +17,6 @@ let localExtensionState = {};
 // Direct communication with Content.js //
 //////////////////////////////////////////
 function handleAppendDivClick() {
-
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id;
         if (tabId) {
@@ -47,6 +46,11 @@ function handleRemoveDivClick() {
 }
 
 function handleConnectHwClick() {
+    // keep state up to date
+    getExtensionState((state) => {
+        localExtensionState = state;
+    });
+
     if (!localExtensionState.hwEnabled) {
         localExtensionState.hwEnabled = true;
         connectHwBtn.textContent = "TLNS (ON)";
@@ -145,5 +149,3 @@ getExtensionState((state) => {
     localExtensionState = state;
     tlnsToggle.checked = state.tlnsPrefValue;
 });
-
-
