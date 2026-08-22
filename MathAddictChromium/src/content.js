@@ -188,6 +188,188 @@ function RemoveMADiv(index) {
     }
 }
 
+
+////////////////////
+// STATE HANDLING //
+////////////////////
+function getExtensionState(callback) {
+    chrome.runtime.sendMessage({ action: "getState" }, (state) => {
+        callback(state);
+    });
+}
+
+
+function setExtensionState(newState, callback) {
+    chrome.runtime.sendMessage({
+        action: "setState",
+        data: newState
+    }, (response) => {
+        if (callback) callback(response);
+    });
+}
+
+function getLastUrl(callback) {
+    chrome.runtime.sendMessage({ action: "getLastUrl" }, (response) => {
+        callback(response.url);
+    });
+}
+
+function setLastUrl(url, callback) {
+    chrome.runtime.sendMessage({
+        action: "setLastUrl",
+        url
+    }, (response) => {
+        if (callback) callback(response);
+    });
+}
+
+
+/////////////////////////
+// Player Data Storage //
+/////////////////////////
+const playerBalanceKey = "playerBalance";
+const playerAutoStartTLNSKey = "autoTLNS";
+
+function savePlayerBalance(newBalance, callback) {
+    chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
+        if (typeof callback === 'function') {
+            callback(newBalance);
+        }
+    });
+}
+
+function loadPlayerBalance(callback) {
+    chrome.storage.sync.get(playerBalanceKey, (res) => {
+        const storedBalance = res[playerBalanceKey] ?? 0.0;
+        callback(storedBalance);
+    });
+}
+
+function savePlayerTLNSPref(autoStart, callback = null) {
+    chrome.storage.sync.set({ [playerAutoStartTLNSKey]: autoStart }, () => {
+        if (typeof callback === 'function') {
+            callback(autoStart);
+        }
+    });
+}
+
+function loadPlayerTLNSPref(callback) {
+    chrome.storage.sync.get(playerAutoStartTLNSKey, (res) => {
+        const autoStartTLNS = res[playerAutoStartTLNSKey] ?? false;
+        callback(autoStartTLNS);
+    });
+}
+
+
+//////////////////////////////
+// Detect user's flow in MA //
+//////////////////////////////
+const targetHost = "mathacademy.com";
+
+function checkPageState() {
+    const currentUrl = location.href;
+
+    getLastUrl((storedLastUrl) => {
+
+        if (!storedLastUrl) {
+            setLastUrl(currentUrl);
+            return;
+        }
+
+        if (storedLastUrl !== currentUrl) {
+            setLastUrl(currentUrl);
+
+            const inTargetSite = currentUrl.includes(targetHost);
+            const inTaskPage = currentUrl.includes("/tasks/");
+
+            if (inTargetSite) {
+                console.log("[MA] User is inside MathAcademy");
+            }
+
+            if (inTargetSite && inTaskPage) {
+                console.log("[MA] User entered a task page");
+                autoStartUnityLaunchRoutine();
+            }
+        }
+    });
+}
+
+function autoStartUnityLaunchRoutine() {
+    loadPlayerTLNSPref((storedPref) => {
+        localExtensionState.tlnsPrefValue = storedPref;  // update stored pref w/ latest load
+
+        // TODO: NEED TO TRIGGER AUTO START
+
+        setExtensionState({ tlnsPrefValue: localExtensionState.tlnsPrefValue});
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Startup (check on initial load (happens every page switch / navigation event)) //
+////////////////////////////////////////////////////////////////////////////////////
+getExtensionState((state) => {
+    localExtensionState = state;
+    checkPageState();
+});
+
+//////////////////////////////
+// Debugging Unity Messages //
+//////////////////////////////
+window.addEventListener("message", (event) => {
+    if (event.data?.type === "unityResult") {
+        // keep balance up to date!
+        const parsedJson = JSON.parse(event.data.payload);
+        const winAmount = parsedJson?.rtp;
+        if (winAmount > 0) {
+            // trigger hardware
+            if (localExtensionState.hwEnabled) {
+                send(computeTLNSSignal(timeDelta));
+            }
+
+            // update session balance
+            localExtensionState.sessionBalance += winAmount;
+            savePlayerBalance(localExtensionState.sessionBalance, (newBalance) => {
+                // callback when save is finished
+                console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', localExtensionState.sessionBalance);
+            });
+            setExtensionState({sessionBalance: localExtensionState.sessionBalance});
+        }
+
+        // send update to other instance!
+        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
+        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "SetBalance", localExtensionState.sessionBalance.toString());
+
+    } else if (event.data?.type === "unityReady") {
+        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
+
+        // go through startup sequence
+        loadPlayerBalance((loadedBalance) => {
+            // callback when load is finished
+            if (loadedBalance >= 0) {
+                localExtensionState.sessionBalance = loadedBalance;
+                sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
+                sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
+
+                // tell unity instances their instance ID
+                sendMessageToUnity(div1Id, "SetInstanceId", div1Id.toString());
+                sendMessageToUnity(div2Id, "SetInstanceId", div2Id.toString());
+                setExtensionState({sessionBalance: localExtensionState.sessionBalance});
+
+            } else {
+                console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', loadedBalance);
+            }
+        });
+
+        startQuestionTimer();
+    } else if (event.data?.type === "toggleSound") {
+        // get int and communicate new state to the other board
+        const parsedJson = JSON.parse(event.data.payload);
+        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
+        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "ToggleSound", "");
+    }
+});
+
+
 ////////////////////////////////////////
 // Detecting Question Response Events //
 ////////////////////////////////////////
@@ -265,107 +447,6 @@ observer.observe(document.body, {
     attributeFilter: ['style', 'class'],
 });
 
-//////////////////////////////
-// Detect user's flow in MA //
-//////////////////////////////
-const targetHost = "mathacademy.com";
-
-function checkPageState() {
-    const currentUrl = location.href;
-
-    getLastUrl((storedLastUrl) => {
-
-        if (!storedLastUrl) {
-            setLastUrl(currentUrl);
-            return;
-        }
-
-        if (storedLastUrl !== currentUrl) {
-            setLastUrl(currentUrl);
-
-            const inTargetSite = currentUrl.includes(targetHost);
-            const inTaskPage = currentUrl.includes("/tasks/");
-
-            if (inTargetSite) {
-                console.log("[MA] User is inside MathAcademy");
-            }
-
-            if (inTargetSite && inTaskPage) {
-                console.log("[MA] User entered a task page");
-                autoStartUnityLaunchRoutine();
-            }
-        }
-    });
-}
-
-function autoStartUnityLaunchRoutine() {
-    loadPlayerTLNSPref((storedPref) => {
-        localExtensionState.tlnsPrefValue = storedPref;  // update stored pref w/ latest load
-
-        // TODO: NEED TO TRIGGER AUTO START
-    });
-}
-
-// Check on initial load (which happens every page switch / navigation event)
-checkPageState();
-
-//////////////////////////////
-// Debugging Unity Messages //
-//////////////////////////////
-window.addEventListener("message", (event) => {
-    if (event.data?.type === "unityResult") {
-        // keep balance up to date!
-        const parsedJson = JSON.parse(event.data.payload);
-        const winAmount = parsedJson?.rtp;
-        if (winAmount > 0) {
-            // trigger hardware
-            if (localExtensionState.hwEnabled) {
-                send(computeTLNSSignal(timeDelta));
-            }
-
-            // update session balance
-            localExtensionState.sessionBalance += winAmount;
-            savePlayerBalance(localExtensionState.sessionBalance, (newBalance) => {
-                // callback when save is finished
-                console.log(debugPrefix, '[SavePlayerData] Balance Saved: ', localExtensionState.sessionBalance);
-            });
-            setExtensionState({sessionBalance: localExtensionState.sessionBalance});
-        }
-
-        // send update to other instance!
-        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
-        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "SetBalance", localExtensionState.sessionBalance.toString());
-
-    } else if (event.data?.type === "unityReady") {
-        console.log(debugPrefix, "[HandleUnityLoadResponse] Unity Game Loaded Successfully");
-
-        // go through startup sequence
-        loadPlayerBalance((loadedBalance) => {
-            // callback when load is finished
-            if (loadedBalance >= 0) {
-                localExtensionState.sessionBalance = loadedBalance;
-                sendMessageToUnity(div1Id, "SetBalance", loadedBalance.toString());
-                sendMessageToUnity(div2Id, "SetBalance", loadedBalance.toString());
-
-                // tell unity instances their instance ID
-                sendMessageToUnity(div1Id, "SetInstanceId", div1Id.toString());
-                sendMessageToUnity(div2Id, "SetInstanceId", div2Id.toString());
-                setExtensionState({sessionBalance: localExtensionState.sessionBalance});
-
-            } else {
-                console.log(debugPrefix, '[LoadPlayerData] Balance Failed to Load!\nDefaulting to $', loadedBalance);
-            }
-        });
-
-        startQuestionTimer();
-    } else if (event.data?.type === "toggleSound") {
-        // get int and communicate new state to the other board
-        const parsedJson = JSON.parse(event.data.payload);
-        const sourceUnityInstance = parsedJson?.instanceId;  // 0 or 1
-        sendMessageToUnity(Math.abs(sourceUnityInstance - 1), "ToggleSound", "");
-    }
-});
-
 
 /////////////////////////////
 // Timing Logic for Wagers //
@@ -379,77 +460,6 @@ function startQuestionTimer() {
 function endQuestionTimerAndFetchTimeDelta() {
     const endTime = Date.now();
     return (endTime - startTime) / 1000;  // delta in seconds
-}
-
-/////////////////////////
-// Player Data Storage //
-/////////////////////////
-const playerBalanceKey = "playerBalance";
-const playerAutoStartTLNSKey = "autoTLNS";
-
-function savePlayerBalance(newBalance, callback) {
-    chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
-        if (typeof callback === 'function') {
-            callback(newBalance);
-        }
-    });
-}
-
-function loadPlayerBalance(callback) {
-    chrome.storage.sync.get(playerBalanceKey, (res) => {
-        const storedBalance = res[playerBalanceKey] ?? 0.0;
-        callback(storedBalance);
-    });
-}
-
-function savePlayerTLNSPref(autoStart, callback = null) {
-    chrome.storage.sync.set({ [playerAutoStartTLNSKey]: autoStart }, () => {
-        if (typeof callback === 'function') {
-            callback(autoStart);
-        }
-    });
-}
-
-function loadPlayerTLNSPref(callback) {
-    chrome.storage.sync.get(playerAutoStartTLNSKey, (res) => {
-        const autoStartTLNS = res[playerAutoStartTLNSKey] ?? false;
-        callback(autoStartTLNS);
-    });
-}
-
-
-////////////////////
-// STATE HANDLING //
-////////////////////
-
-function getExtensionState(callback) {
-    chrome.runtime.sendMessage({ action: "getState" }, (state) => {
-        callback(state);
-    });
-}
-
-function setExtensionState(newState, callback) {
-    chrome.runtime.sendMessage({
-        action: "setState",
-        data: newState
-    }, (response) => {
-        if (callback) callback(response);
-    });
-}
-
-function getLastUrl(callback) {
-    chrome.runtime.sendMessage({ action: "getLastUrl" }, (response) => {
-        callback(response.url);
-    });
-}
-
-function setLastUrl(url, callback) {
-    chrome.runtime.sendMessage({
-        action: "setLastUrl",
-        url
-    }, (response) => {
-        if (callback) callback(response);
-    });
 }
 
 
