@@ -13,7 +13,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://mathacademy.com/*"],
+      "matches": ["https://mathacademy.com/*", "https://example.com/"],
       "js": ["src/content.js"],
       "run_at": "document_idle"
     }
@@ -34,7 +34,8 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://mathacademy.com/*"
+    "https://mathacademy.com/*",
+    "https://example.com/"
   ],
   "optional_permissions": [
     "serial"

@@ -107,15 +107,15 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const removeBtn = document.getElementById(removeElement);
     const status = document.getElementById(statusElement);
 
-    if (!inTargetSite) {
-        appendBtn.disabled = true;
-        removeBtn.disabled = true;
-        status.textContent = "This extension only works on " + targetHost + "!";
-    } else if (!inTargetPage) {
-        appendBtn.disabled = true;
-        removeBtn.disabled = true;
-        status.textContent = "This extension only works on task pages!";
-    }
+    // if (!inTargetSite) {
+    //     appendBtn.disabled = true;
+    //     removeBtn.disabled = true;
+    //     status.textContent = "This extension only works on " + targetHost + "!";
+    // } else if (!inTargetPage) {
+    //     appendBtn.disabled = true;
+    //     removeBtn.disabled = true;
+    //     status.textContent = "This extension only works on task pages!";
+    // }
 });
 
 const tlnsToggle = document.getElementById('tlnsToggle');
@@ -126,6 +126,46 @@ tlnsToggle.addEventListener("change", () => {
     const newPrefValue = tlnsToggle.checked;
     handleToggleTLNSAutoSave(newPrefValue);
 });
+
+// Debug Section Starts
+document.getElementById('debugEnterLesson').addEventListener('click', () => {
+    console.log('Entering Lesson');
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, { action: "debugAutoStartUnity" }, (response) => {
+                // no-op
+            });
+        }
+    });
+});
+document.getElementById('debugFinishLesson').addEventListener('click', () => {
+    console.log('Finishing Lesson');
+    // TODO: handler for showing WOW performance for lessons
+});
+document.getElementById('debugCorrectAnswer').addEventListener('click', () => {
+    console.log('Correct Answer');
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, { action: "debugCorrectAnswer" }, (response) => {
+                // no-op
+            });
+        }
+    });
+});
+document.getElementById('debugInCorrectAnswer').addEventListener('click', () => {
+    console.log('Incorrect Answer');
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, { action: "debugIncorrectAnswer" }, (response) => {
+                // no-op
+            });
+        }
+    });
+});
+// Debug Section Ends
 
 
 ////////////////////////////////////////////

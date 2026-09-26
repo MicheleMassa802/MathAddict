@@ -113,7 +113,38 @@ const handlers = {
         });
 
         return true;  // allow async sendResponse
-    }
+    },
+
+    // Debug Section Starts
+    debugAutoStartUnity(request, sender, sendResponse) {
+        autoStartUnityLaunchRoutine();
+    },
+
+    debugCorrectAnswer(request, sender, sendResponse) {
+        const correctResultBox = {
+            querySelector(selector) {
+                if (selector === '.questionWidget-correctText') {
+                    return {}; // truthy
+                }
+                return null;
+            }
+        };
+        handleResultBox(correctResultBox);
+    },
+
+    debugIncorrectAnswer(request, sender, sendResponse) {
+        const incorrectResultBox = {
+            querySelector(selector) {
+                if (selector === '.questionWidget-incorrectText') {
+                    return {}; // truthy
+                }
+                return null;
+            }
+        };
+
+        handleResultBox(incorrectResultBox);
+    },
+    // Debug Section Ends
 };
 
 function connectHwRoutine() {
@@ -264,7 +295,8 @@ function loadPlayerTLNSPref(callback) {
 //////////////////////////////
 // Detect user's flow in MA //
 //////////////////////////////
-const targetHost = "mathacademy.com";
+// const targetHost = "mathacademy.com";
+const targetHost = "https://example.com/";
 
 function checkPageState() {
     const currentUrl = location.href;
@@ -298,7 +330,7 @@ function autoStartUnityLaunchRoutine() {
     loadPlayerTLNSPref((storedPref) => {
         localExtensionState.tlnsPrefValue = storedPref;  // update stored pref w/ latest load
 
-        // trigger auto start for unity (only relevant at startup, hence no need to immediatly check
+        // trigger auto start for unity (only relevant at startup, hence no need to immediately check
         // state prior to this)
         handlers.appendDiv(
             { action: "appendDiv" },
