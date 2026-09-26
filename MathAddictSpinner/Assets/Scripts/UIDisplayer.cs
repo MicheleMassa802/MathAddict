@@ -30,7 +30,7 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI winText;
     [SerializeField] private TextMeshProUGUI balanceText;
     [SerializeField] private TextMeshProUGUI timeText;
-    [SerializeField] private List<GameObject> spinFlowIndicators;  // correct answer, spin available, spin winner
+    [SerializeField] private List<GameObject> spinFlowIndicators;  // correct answer, spin winner
     [SerializeField] private List<Image> filledComboIndicators;  // jackpot, 25x, 10x
     
     // Spinner Sprites
