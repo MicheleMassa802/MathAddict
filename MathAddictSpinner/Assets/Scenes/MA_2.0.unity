@@ -2253,6 +2253,7 @@ GameObject:
   - component: {fileID: 619995518}
   - component: {fileID: 619995520}
   - component: {fileID: 619995519}
+  - component: {fileID: 619995521}
   m_Layer: 5
   m_Name: LeftSidePopup
   m_TagString: Untagged
@@ -2318,6 +2319,29 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 619995517}
   m_CullTransparentMesh: 1
+--- !u!114 &619995521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619995517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636abd5f931ee87479f7845f8b27c61e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  graphicComponents:
+  - {fileID: 619995519}
+  - {fileID: 244069053}
+  - {fileID: 1624391456}
+  - {fileID: 899370976}
+  textComponent: {fileID: 0}
+  holdDuration: 7
+  awayY: 0
+  targetY: 0
+  inactiveScaleFactor: 0.8
+  activeScaleFactor: 1
 --- !u!1 &657516095
 GameObject:
   m_ObjectHideFlags: 0
@@ -3323,7 +3347,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 857249291}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
@@ -5019,6 +5043,7 @@ MonoBehaviour:
   lineRenderer1: {fileID: 731026390}
   lineRenderer2: {fileID: 169760712}
   winPopupManager: {fileID: 1483505648}
+  eorPopupManager: {fileID: 619995521}
 --- !u!114 &1175678178
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5964,6 +5989,12 @@ MonoBehaviour:
   - {fileID: 773772365}
   - {fileID: 1041454488}
   - {fileID: 1419432959}
+  textComponent: {fileID: 0}
+  holdDuration: 3.5
+  awayY: 2000
+  targetY: 25
+  inactiveScaleFactor: 0.2
+  activeScaleFactor: 0.8
 --- !u!1 &1500194182
 GameObject:
   m_ObjectHideFlags: 0

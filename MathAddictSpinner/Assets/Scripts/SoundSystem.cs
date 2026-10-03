@@ -131,7 +131,10 @@ public class SoundSystem : MonoBehaviour
 
     public void TurnMusicOn()
     {
-        ToggleMusic(backgroundMusic);
+        if (soundOn)
+        {
+            ToggleMusic(backgroundMusic);
+        }
     }
     
     public void TurnMusicOff()

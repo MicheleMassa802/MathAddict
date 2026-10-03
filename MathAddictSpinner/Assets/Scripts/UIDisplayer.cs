@@ -47,7 +47,8 @@ public class UIDisplayer : MonoBehaviour
     [SerializeField] private UILineRenderer lineRenderer1;
     [SerializeField] private UILineRenderer lineRenderer2;
     
-    public WinPopup winPopupManager;
+    public Popup winPopupManager;
+    public Popup eorPopupManager;
     #endregion
 
     private Dictionary<int, Sprite> symbolsMap;
@@ -192,7 +193,7 @@ public class UIDisplayer : MonoBehaviour
                 DrawLine(resultNumbers.keyIndices[i], i);
             }
             soundSystem.PlayBigWinSound(resultNumbers.jackpotTriggered);
-            winPopupManager.TriggerWinPopup();
+            winPopupManager.TriggerPopup();
         }
         else
         {
@@ -278,6 +279,12 @@ public class UIDisplayer : MonoBehaviour
     {
         float flashDuration = flashDurationOverride < 0 ? UIConstants.spinIndicatorFlashLength[index] : flashDurationOverride;
         StartCoroutine(AnimateSpinFlowIndicators(spinFlowIndicators[index], flashDuration , setIndicatorActive, soundSystem));
+    }
+
+    public void TriggerEor(string popupData)
+    {
+        // let popup manager take care of parsing and error checking on the data
+        eorPopupManager.TriggerPopup(popupData);
     }
 
     public void CleanUpSpinFlowIndicators()

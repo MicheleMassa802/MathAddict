@@ -235,6 +235,11 @@ public class MAUnityManager : MonoBehaviour
 
         UnityInstanceId = id;
     }
+
+    public void TriggerEndOfRound(string popupData)
+    {
+        uiManager.TriggerEor(popupData);
+    }
     #endregion
     
     #region Setup
