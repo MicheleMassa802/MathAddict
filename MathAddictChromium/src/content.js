@@ -120,6 +120,12 @@ const handlers = {
         autoStartUnityLaunchRoutine();
     },
 
+    debugFinishLesson(request, sender, sendResponse) {
+        const testString = "327:23:7:-1";
+        sendMessageToUnity(div1Id, "TriggerEndOfRound", testString);
+        sendMessageToUnity(div2Id, "TriggerEndOfRound", testString);
+    },
+
     debugCorrectAnswer(request, sender, sendResponse) {
         const correctResultBox = {
             querySelector(selector) {

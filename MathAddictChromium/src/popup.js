@@ -141,7 +141,14 @@ document.getElementById('debugEnterLesson').addEventListener('click', () => {
 });
 document.getElementById('debugFinishLesson').addEventListener('click', () => {
     console.log('Finishing Lesson');
-    // TODO: handler for showing WOW performance for lessons
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId) {
+            chrome.tabs.sendMessage(tabId, { action: "debugFinishLesson" }, (response) => {
+                // no-op
+            });
+        }
+    });
 });
 document.getElementById('debugCorrectAnswer').addEventListener('click', () => {
     console.log('Correct Answer');

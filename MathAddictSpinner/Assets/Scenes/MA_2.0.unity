@@ -2336,7 +2336,7 @@ MonoBehaviour:
   - {fileID: 244069053}
   - {fileID: 1624391456}
   - {fileID: 899370976}
-  textComponent: {fileID: 0}
+  textComponent: {fileID: 899370976}
   holdDuration: 7
   awayY: 0
   targetY: 0
@@ -3408,7 +3408,7 @@ GameObject:
   - component: {fileID: 899370977}
   - component: {fileID: 899370976}
   m_Layer: 5
-  m_Name: ContentLable
+  m_Name: ContentLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

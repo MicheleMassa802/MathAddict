@@ -75,7 +75,7 @@ public class Popup : MonoBehaviour
             $"<b>Time: {formattedTime}</b>\n" + 
             $"{Math.Abs(timeDeltaPercent)}% {timeDeltaString} than previous available week's average!\n\n" + 
             $"<b>Distraction Count: {distractionCount}</b>\n" + 
-            $"{Math.Abs(distractionCountDelta)} times {distractionCountDeltaString} than previous available week's average!";
+            $"{Math.Abs(distractionCountDelta)} time(s) {distractionCountDeltaString} than previous available week's average!";
         
         return message;
     }
