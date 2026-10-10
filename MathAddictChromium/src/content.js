@@ -122,6 +122,10 @@ const handlers = {
 
     debugFinishLesson(request, sender, sendResponse) {
         const testString = "327:23:7:-1";
+        // TODO: test with different values
+        // <time><timeDeltaPercent><distracts><distractCountDelta>
+        // <timeDeltaPercent>: +ve => increase in time => slower
+        // <distractCountDelta>: +ve => increase in distracts => more than previous
         sendMessageToUnity(div1Id, "TriggerEndOfRound", testString);
         sendMessageToUnity(div2Id, "TriggerEndOfRound", testString);
     },
@@ -266,6 +270,8 @@ function setLastUrl(url, callback) {
 /////////////////////////
 const playerBalanceKey = "playerBalance";
 const playerAutoStartTLNSKey = "autoTLNS";
+const playerDailyTimeStatsKey = "dailyTimeStats";
+const playerWeeklyTimeStatsKey = "weeklyTimeStats";
 
 function savePlayerBalance(newBalance, callback) {
     chrome.storage.sync.set({ [playerBalanceKey]: newBalance }, () => {
@@ -297,6 +303,128 @@ function loadPlayerTLNSPref(callback) {
     });
 }
 
+function savePlayerDailyStats(newLessonTime, distractionOccurred, callback) {
+
+    const today = getLocalDayKey();
+
+    loadPlayerDailyStats((prevDailyStats) => {
+        let dailyStats = {};
+        if (today === prevDailyStats.day) {
+
+            if (newLessonTime > 0) {
+                dailyStats = {
+                    ...prevDailyStats,
+                    lessonTimeMean: prevDailyStats.lessonTimeMean + (newLessonTime - prevDailyStats.lessonTimeMean) / (prevDailyStats.count + 1),
+                    lessonCount: prevDailyStats.count + 1
+                };
+            } else if (distractionOccurred) {
+                dailyStats = {
+                    ...prevDailyStats,
+                    distractionCount: prevDailyStats.distractionCount + 1
+                };
+            }
+
+        } else {
+            // update weekly data with the currently recorded daily and start a new daily from 0
+            savePlayerWeeklyStats(prevDailyStats, (weeklyData) => {
+                // compute prev week mean and debug
+                const weeklyStats = computeWeeklyDataStats(weeklyData);
+                console.log(`[MA] Last week average ${weeklyStats.lessonTimeMean}`);
+            });
+
+            dailyStats = {
+                lessonTimeMean: newLessonTime > 0 ? newLessonTime : 0,
+                lessonCount: newLessonTime > 0 ? 1 : 0,
+                day: today,
+                distractionCount: distractionOccurred ? 1 : 0
+            };
+        }
+
+        chrome.storage.sync.set({ [playerDailyTimeStatsKey]: dailyStats }, () => {
+            if (typeof callback === 'function') {
+                callback(dailyStats);
+            }
+        });
+    });
+}
+
+function savePlayerWeeklyStats(newDayConfig, callback = null) {
+    // oldest in the front, newest in the back of the list
+    loadPlayerWeeklyStats((prevWeeklyStats) => {
+        const weekly = Array.isArray(prevWeeklyStats) ? [...prevWeeklyStats] : [];
+
+        // avoid accidental duplicates
+        const existingIndex = weekly.findIndex((day) => day.day === newDayConfig.day);
+
+        if (existingIndex >= 0) {
+            weekly[existingIndex] = newDayConfig
+        } else {
+            weekly.push(newDayConfig);
+        }
+
+        // keep only last 7 days
+        weekly.sort((a, b) => a.day.localeCompare(b.day));
+
+        while (weekly.length > 7) {
+            weekly.shift();
+        }
+
+        chrome.storage.sync.set({ [playerWeeklyTimeStatsKey]: weekly }, () => {
+            if (typeof callback === 'function') {
+                callback(weekly);
+            }
+        });
+    });
+}
+
+function loadPlayerDailyStats(callback) {
+    chrome.storage.sync.get(playerDailyTimeStatsKey, (res) => {
+        const daily = res[playerDailyTimeStatsKey] || {
+            lessonTimeMean: 0,
+            lessonCount: 0,
+            day: getLocalDayKey(),
+            distractionCount: 0
+        };
+
+        callback(daily);
+    });
+}
+
+function loadPlayerWeeklyStats(callback) {
+    chrome.storage.sync.get(playerWeeklyTimeStatsKey, (res) => {
+        const weekly = res[playerWeeklyTimeStatsKey] || [];
+        callback(weekly);
+    });
+}
+
+// Data Helpers
+function getLocalDayKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function computeWeeklyDataStats(weeklyStats) {
+    // average stats over the full list of 7 prev days, return result object
+    let totalLessonTime = 0;
+    let totalLessonCount = 0;
+    let totalDistractions = 0;
+
+    weeklyStats.forEach(day => {
+        totalLessonTime += day.lessonTimeMean * day.lessonCount;
+        totalLessonCount += day.lessonCount;
+        totalDistractions += day.distractionCount;
+    });
+
+    return {
+        lessonTimeMean: totalLessonCount > 0 ? totalLessonTime / totalLessonCount : 0,
+        distractionCount: totalDistractions
+    };
+}
+
+function computeDailyDataStats(weeklyStats, dailyStats) {
+    const lessonTimeDelta = Math.round(((dailyStats.lessonTimeMean - weeklyStats.lessonTimeMean) / weeklyStats.lessonTimeMean) * 100);
+    return `${Math.round(weeklyStats.lessonTimeMean)}:${lessonTimeDelta}:${weeklyStats.distractionCount}:${weeklyStats.distractionCount - dailyStats.distractionCount}`;
+}
 
 //////////////////////////////
 // Detect user's flow in MA //
@@ -476,7 +604,11 @@ function handleResultBox(resultBox) {
 
     } else {
         console.log(debugPrefix, '[HandleResultBox] WTF is that answer being detected bro, be fr...');
+        return;
     }
+
+    // TODO: save time for stats-keeping (correct/incorrect still both count)
+
 }
 
 function handleContinueButtonDismissed() {
