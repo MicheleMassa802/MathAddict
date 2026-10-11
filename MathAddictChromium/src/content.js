@@ -136,7 +136,7 @@ const handlers = {
         // });
 
         // DEBUG SECTION
-        const testString = "327:-23:7:-1";
+        const testString = "327:-23:7:99";
         // TODO: test with different values
         // <time><timeDeltaPercent><distracts><distractCountDelta>
         // <timeDeltaPercent>: +ve => increase in time => slower

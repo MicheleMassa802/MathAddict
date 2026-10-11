@@ -69,7 +69,7 @@ public class Popup : MonoBehaviour
         // <timeDeltaPercent>: +ve => increase in time => slower
         // <distractCountDelta>: +ve => increase in distracts => more than previous
         string timeDeltaString = timeDeltaPercent > 0 ? "slower" : "faster";
-        string distractionCountDeltaString = distractionCount > 0 ? "more" : "less";
+        string distractionCountDeltaString = distractionCountDelta > 0 ? "more" : "less";
         
         string formattedTime = TimeSpan.FromSeconds(timeSeconds).ToString(@"mm\:ss");
             
