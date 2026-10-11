@@ -654,11 +654,14 @@ observer.observe(document.body, {
 ///////////////////////
 let popupTimer = null;
 
+// randomize every 3-5 minutes!!
 function armPopup(timeMs) {
     clearTimeout(popupTimer);
 
     popupTimer = setTimeout(() => {
-        const result = confirm("Are you still working on the problem?");
+        // custom popup?
+        // options: Yes | No, I was distracted ;)
+        const result = confirm("Am I still working on the problem?");
 
         if (result) {
             console.log("[MA] User clicked Yes (no distraction!)");
