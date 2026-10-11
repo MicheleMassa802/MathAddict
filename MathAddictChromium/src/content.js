@@ -10,7 +10,7 @@ const div2Id = 1;
 const unityInstances = [];
 const extensionDivIdPrefix = "MADiv";
 const debugPrefix = "[MathAddict][Content]";
-
+const defaultPopupTimeout = 180000;
 
 ///////////////////////////////////////////
 // Listening for start signal from popup //
@@ -121,7 +121,22 @@ const handlers = {
     },
 
     debugFinishLesson(request, sender, sendResponse) {
-        const testString = "327:23:7:-1";
+        disarmPopup();
+        // TODO: uncomment ts once ready
+        // // trigger lesson count to go up
+        // savePlayerDailyStats(0, false, true, (dailyData) => {
+        //     // compute stats to show
+        //     loadPlayerWeeklyStats((weeklyData) => {
+        //         const weeklyStats = computeWeeklyDataStats(weeklyData);
+        //         const dailyStats = computeDailyDataStats(weeklyStats, dailyData);
+        //
+        //         sendMessageToUnity(div1Id, "TriggerEndOfRound", dailyStats);
+        //         sendMessageToUnity(div2Id, "TriggerEndOfRound", dailyStats);
+        //     });
+        // });
+
+        // DEBUG SECTION
+        const testString = "327:-23:7:-1";
         // TODO: test with different values
         // <time><timeDeltaPercent><distracts><distractCountDelta>
         // <timeDeltaPercent>: +ve => increase in time => slower
@@ -303,7 +318,7 @@ function loadPlayerTLNSPref(callback) {
     });
 }
 
-function savePlayerDailyStats(newLessonTime, distractionOccurred, callback) {
+function savePlayerDailyStats(newLessonTime, distractionOccurred, finishedLesson, callback) {
 
     const today = getLocalDayKey();
 
@@ -312,10 +327,11 @@ function savePlayerDailyStats(newLessonTime, distractionOccurred, callback) {
         if (today === prevDailyStats.day) {
 
             if (newLessonTime > 0) {
+                const newLessonCount = finishedLesson ? prevDailyStats.lessonCount + 1 : prevDailyStats.lessonCount;
                 dailyStats = {
                     ...prevDailyStats,
-                    lessonTimeMean: prevDailyStats.lessonTimeMean + (newLessonTime - prevDailyStats.lessonTimeMean) / (prevDailyStats.count + 1),
-                    lessonCount: prevDailyStats.count + 1
+                    lessonTimeTotal: prevDailyStats.lessonTimeTotal + newLessonTime,
+                    lessonCount: newLessonCount
                 };
             } else if (distractionOccurred) {
                 dailyStats = {
@@ -333,8 +349,8 @@ function savePlayerDailyStats(newLessonTime, distractionOccurred, callback) {
             });
 
             dailyStats = {
-                lessonTimeMean: newLessonTime > 0 ? newLessonTime : 0,
-                lessonCount: newLessonTime > 0 ? 1 : 0,
+                lessonTimeTotal: newLessonTime > 0 ? newLessonTime : 0,
+                lessonCount: finishedLesson ? 1 : 0,
                 day: today,
                 distractionCount: distractionOccurred ? 1 : 0
             };
@@ -348,7 +364,7 @@ function savePlayerDailyStats(newLessonTime, distractionOccurred, callback) {
     });
 }
 
-function savePlayerWeeklyStats(newDayConfig, callback = null) {
+function savePlayerWeeklyStats(newDayConfig, callback) {
     // oldest in the front, newest in the back of the list
     loadPlayerWeeklyStats((prevWeeklyStats) => {
         const weekly = Array.isArray(prevWeeklyStats) ? [...prevWeeklyStats] : [];
@@ -380,7 +396,7 @@ function savePlayerWeeklyStats(newDayConfig, callback = null) {
 function loadPlayerDailyStats(callback) {
     chrome.storage.sync.get(playerDailyTimeStatsKey, (res) => {
         const daily = res[playerDailyTimeStatsKey] || {
-            lessonTimeMean: 0,
+            lessonTimeTotal: 0,
             lessonCount: 0,
             day: getLocalDayKey(),
             distractionCount: 0
@@ -410,20 +426,26 @@ function computeWeeklyDataStats(weeklyStats) {
     let totalDistractions = 0;
 
     weeklyStats.forEach(day => {
-        totalLessonTime += day.lessonTimeMean * day.lessonCount;
+        totalLessonTime += day.lessonTimeTotal;
         totalLessonCount += day.lessonCount;
         totalDistractions += day.distractionCount;
     });
 
     return {
         lessonTimeMean: totalLessonCount > 0 ? totalLessonTime / totalLessonCount : 0,
-        distractionCount: totalDistractions
+        distractionCountDaily: weeklyStats.length > 0 ? totalDistractions / weeklyStats.length : 0
     };
 }
 
 function computeDailyDataStats(weeklyStats, dailyStats) {
-    const lessonTimeDelta = Math.round(((dailyStats.lessonTimeMean - weeklyStats.lessonTimeMean) / weeklyStats.lessonTimeMean) * 100);
-    return `${Math.round(weeklyStats.lessonTimeMean)}:${lessonTimeDelta}:${weeklyStats.distractionCount}:${weeklyStats.distractionCount - dailyStats.distractionCount}`;
+    const dailyMean = dailyStats.lessonCount > 0 ? dailyStats.lessonTimeTotal / dailyStats.lessonCount : 0;
+
+    let lessonTimeDelta = 0;
+    if (weeklyStats.lessonTimeMean > 0) {
+        lessonTimeDelta = Math.round(((dailyMean - weeklyStats.lessonTimeMean) / weeklyStats.lessonTimeMean) * 100);
+    }
+
+    return `${Math.round(weeklyStats.lessonTimeMean)}:${lessonTimeDelta}:${weeklyStats.distractionCountDaily}:${dailyStats.distractionCount - weeklyStats.distractionCountDaily}`;
 }
 
 //////////////////////////////
@@ -473,6 +495,7 @@ function autoStartUnityLaunchRoutine() {
         );
 
         setExtensionState({ tlnsPrefValue: localExtensionState.tlnsPrefValue});
+        armPopup(defaultPopupTimeout);
     });
 }
 
@@ -587,7 +610,7 @@ const observer = new MutationObserver((mutations) => {
 
 function handleResultBox(resultBox) {
     // call time to compute wager to send
-    // const currentWager = endQuestionTimerAndFetchWager();
+    disarmPopup();
     timeDelta = endQuestionTimerAndFetchTimeDelta();
     let currentWager = possibleWagers[Math.floor(Math.random() * possibleWagers.length)];
     const isCorrect = !!resultBox.querySelector('.questionWidget-correctText');
@@ -607,8 +630,11 @@ function handleResultBox(resultBox) {
         return;
     }
 
-    // TODO: save time for stats-keeping (correct/incorrect still both count)
-
+    armPopup(defaultPopupTimeout + 10000);  // should get disarmed safely after End Of Lesson detection!
+    // armed with 10000 extra ms to account for spin result
+    savePlayerDailyStats(timeDelta, false, false, (dailyData) => {
+        console.log(`[MA] Saved data for question ${dailyData}`);
+    });
 }
 
 function handleContinueButtonDismissed() {
@@ -622,6 +648,34 @@ observer.observe(document.body, {
     attributes: true,
     attributeFilter: ['style', 'class'],
 });
+
+///////////////////////
+// Distraction Popup //
+///////////////////////
+let popupTimer = null;
+
+function armPopup(timeMs) {
+    clearTimeout(popupTimer);
+
+    popupTimer = setTimeout(() => {
+        const result = confirm("Are you still working on the problem?");
+
+        if (result) {
+            console.log("[MA] User clicked Yes (no distraction!)");
+            armPopup(defaultPopupTimeout);
+        } else {
+            savePlayerDailyStats(-1, true, false, (dailyData) => {
+                console.log(`[MA] User clicked No (saving distraction data) ${dailyData}`);
+            });
+            armPopup(defaultPopupTimeout);
+        }
+    }, timeMs);  // delay in ms
+}
+
+function disarmPopup() {
+    clearTimeout(popupTimer);
+    popupTimer = null;
+}
 
 
 /////////////////////////////

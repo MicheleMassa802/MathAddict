@@ -66,8 +66,10 @@ public class Popup : MonoBehaviour
 
     private string SetLessonPopupTextFromFloats(int timeSeconds, int timeDeltaPercent, int distractionCount, int distractionCountDelta)
     {
-        string timeDeltaString = timeDeltaPercent < 0 ? "slower" : "faster";
-        string distractionCountDeltaString = distractionCount < 0 ? "less" : "more";
+        // <timeDeltaPercent>: +ve => increase in time => slower
+        // <distractCountDelta>: +ve => increase in distracts => more than previous
+        string timeDeltaString = timeDeltaPercent > 0 ? "slower" : "faster";
+        string distractionCountDeltaString = distractionCount > 0 ? "more" : "less";
         
         string formattedTime = TimeSpan.FromSeconds(timeSeconds).ToString(@"mm\:ss");
             
